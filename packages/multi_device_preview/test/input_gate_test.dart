@@ -1,6 +1,5 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:multi_device_preview/multi_device_preview.dart';
 import 'package:multi_device_preview/src/sync/input_gate.dart';
