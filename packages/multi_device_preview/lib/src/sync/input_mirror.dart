@@ -87,14 +87,15 @@ class InputMirror {
       isScroll: isScroll,
     );
     for (var device = 1; device < host.deviceCount; device++) {
-      _queues
-          .putIfAbsent(device, _TargetQueue.new)
-          .add(gesture, () => _send(device, gesture));
+      // Queued by id: indices shift when a device is added or removed while
+      // gestures are pending.
+      final id = host.idOf(device);
+      _queues.putIfAbsent(id, _TargetQueue.new).add(() => _send(id, gesture));
     }
     return gesture;
   }
 
-  Future<void> _send(int device, _Gesture gesture) async {
+  Future<void> _send(int id, _Gesture gesture) async {
     // Never re-enter GestureBinding while it dispatches the source event.
     await _afterSource();
 
@@ -105,21 +106,21 @@ class InputMirror {
       return;
     }
     if (!gesture.capture.precise && !gesture.moved) {
-      host.markOutOfSync(device);
+      _markOutOfSync(id);
       return;
     }
 
-    final target = await _resolve(device, gesture.capture);
+    final target = await _resolve(id, gesture.capture);
     if (target == null) {
       if (!_disposed) {
-        host.markOutOfSync(device);
+        _markOutOfSync(id);
       }
       return;
     }
 
     final shift = target - gesture.first.position;
     final pointer = _nextPointer++;
-    final syntheticDevice = kSyntheticDeviceBase + device;
+    final syntheticDevice = kSyntheticDeviceBase + id % 0x10000;
     final clock = Stopwatch()..start();
     final start = gesture.first.timeStamp;
     var sent = 0;
@@ -156,7 +157,13 @@ class InputMirror {
     // settle, then give focus back to the source device so the keyboard keeps
     // typing there. Other devices receive the text through TextSync.
     await Future<void>.delayed(Duration.zero);
-    _restoreFocus(device);
+    _restoreFocus(id);
+  }
+
+  void _markOutOfSync(int id) {
+    if (host.indexOfId(id) case final index?) {
+      host.markOutOfSync(index);
+    }
   }
 
   /// Waits until the source device has handled the latest event, including
@@ -164,13 +171,14 @@ class InputMirror {
   /// from a mirrored tap could override the source's in the same batch.
   static Future<void> _afterSource() => Future<void>.delayed(Duration.zero);
 
-  Future<Offset?> _resolve(int device, CapturedPoint capture) async {
+  Future<Offset?> _resolve(int id, CapturedPoint capture) async {
     // Counted in polls rather than measured, so fake clocks in tests work.
     var remaining =
         kMirrorResolveTimeout.inMicroseconds ~/ _pollInterval.inMicroseconds;
     var revealed = false;
     while (!_disposed) {
-      if (device >= host.deviceCount) {
+      final device = host.indexOfId(id);
+      if (device == null) {
         return null;
       }
       final anchors = host.anchorsOf(device);
@@ -202,13 +210,15 @@ class InputMirror {
     }
   }
 
-  void _restoreFocus(int device) {
+  void _restoreFocus(int id) {
+    final device = host.indexOfId(id);
     final sourceFocus = _sourceFocus;
     final current = FocusManager.instance.primaryFocus;
     final currentContext = current?.context;
     if (current == null ||
         identical(current, sourceFocus) ||
         currentContext == null ||
+        device == null ||
         host.deviceOf(currentContext) != device) {
       return;
     }
@@ -283,7 +293,7 @@ class _TargetQueue {
   final List<Future<void> Function()> _pending = [];
   bool _running = false;
 
-  void add(Object gesture, Future<void> Function() run) {
+  void add(Future<void> Function() run) {
     _pending.add(run);
     if (!_running) {
       unawaited(_drain());
@@ -327,9 +337,14 @@ PointerEvent? synthesizePointerEvent(
   required int device,
   required Offset position,
 }) {
-  final kind = event.kind == PointerDeviceKind.mouse
-      ? PointerDeviceKind.touch
-      : event.kind;
+  // MouseTracker keeps hover state for mice and styluses; a synthetic device
+  // would never be removed from it.
+  final kind = switch (event.kind) {
+    PointerDeviceKind.mouse ||
+    PointerDeviceKind.stylus ||
+    PointerDeviceKind.invertedStylus => PointerDeviceKind.touch,
+    final kind => kind,
+  };
   return switch (event) {
     PointerDownEvent() => PointerDownEvent(
       viewId: event.viewId,

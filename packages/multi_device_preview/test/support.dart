@@ -89,6 +89,7 @@ class ProbeApp extends StatefulWidget {
 
 class ProbeAppState extends State<ProbeApp> {
   int count = 0;
+  int favorites = 0;
   String? lastItem;
   String changed = '';
   String submitted = '';
@@ -114,6 +115,13 @@ class ProbeAppState extends State<ProbeApp> {
           title: const Text('Probe'),
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              tooltip: 'Favorite',
+              icon: const Icon(Icons.star),
+              onPressed: () => setState(() => favorites++),
+            ),
+          ],
         ),
         body: loading
             ? const Center(child: CircularProgressIndicator())

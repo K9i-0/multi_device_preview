@@ -143,6 +143,10 @@ class TextSync {
       return false;
     }
     final value = source[index].textEditingValue;
+    if (value.composing.isValid) {
+      // Enter confirms the IME conversion; it does not submit.
+      return false;
+    }
     final targets = <EditableTextState>[
       for (var device = 1; device < host.deviceCount; device++)
         if (editableTextsOf(device) case final fields
