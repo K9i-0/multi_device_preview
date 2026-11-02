@@ -1,0 +1,68 @@
+name: Publish
+
+# Publishes a package to pub.dev when its release tag is pushed:
+#   multi_device_preview-v<version>
+#   multi_device_preview_marionette-v<version>
+# Authenticates with GitHub OIDC (pub.dev automated publishing), so no
+# secrets are stored. Enable it on each package's admin page on pub.dev with
+# the tag pattern above.
+on:
+  push:
+    tags:
+      - 'multi_device_preview-v*'
+      - 'multi_device_preview_marionette-v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Resolve the package from the tag
+        id: package
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          package="${TAG%-v*}"
+          version="${TAG##*-v}"
+          dir="packages/$package"
+          if [ ! -f "$dir/pubspec.yaml" ]; then
+            echo "::error::No package for tag $TAG"
+            exit 1
+          fi
+          actual="$(sed -n 's/^version: *//p' "$dir/pubspec.yaml")"
+          if [ "$actual" != "$version" ]; then
+            echo "::error::Tag version $version does not match $dir/pubspec.yaml ($actual)"
+            exit 1
+          fi
+          if ! grep -q "^## $version\$" "$dir/CHANGELOG.md"; then
+            echo "::error::$dir/CHANGELOG.md has no section for $version"
+            exit 1
+          fi
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      # Sets up the OIDC token exchange with pub.dev. Flutter (from mise)
+      # comes after it, so its dart and flutter are the ones on PATH.
+      - uses: dart-lang/setup-dart@v1
+      - uses: jdx/mise-action@v5
+
+      - run: mise run setup
+      - run: mise run check
+      - run: flutter build macos --debug
+        working-directory: packages/multi_device_preview/example
+
+      - name: Validate
+        working-directory: ${{ steps.package.outputs.dir }}
+        run: flutter pub publish --dry-run
+
+      - name: Publish
+        working-directory: ${{ steps.package.outputs.dir }}
+        run: flutter pub publish --force
