@@ -132,9 +132,10 @@ void main() {
     await pump(tester);
 
     Future<List<int>> capture({int? device}) async {
-      final future = controller.captureScreenshot(device: device);
-      await tester.pump();
-      return (await tester.runAsync(() => future))!;
+      return completeWithRealAsync(
+        tester,
+        controller.captureScreenshot(device: device),
+      );
     }
 
     const pngSignature = [0x89, 0x50, 0x4E, 0x47];

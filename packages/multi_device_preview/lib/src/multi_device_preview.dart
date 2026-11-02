@@ -62,7 +62,7 @@ class MultiDevicePreview extends StatefulWidget {
   /// its own controller with [devices].
   final MultiDevicePreviewController? controller;
 
-  /// The devices shown when [controller] is null.
+  /// The devices shown when [controller] is null. Ignored otherwise.
   final List<PreviewDevice> devices;
 
   /// Extra ways to recognize the same element across devices, tried before
