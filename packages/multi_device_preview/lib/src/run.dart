@@ -1,16 +1,11 @@
-import 'package:device_preview/presets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import 'controller.dart';
 import 'multi_device_preview.dart';
 import 'preview_device.dart';
-
-/// The devices shown when none are given to [runMultiDevicePreview].
-const List<PreviewDevice> defaultPreviewDevices = [
-  PreviewDevice(preset: DevicePresets.iPhoneSe3),
-  PreviewDevice(preset: DevicePresets.iPhone17),
-  PreviewDevice(preset: DevicePresets.iPhone17, textScale: 1.5),
-];
+import 'sync/anchor.dart';
+import 'sync/input_gate.dart';
 
 /// Runs the app built by [appBuilder] on each of [devices], side by side.
 ///
@@ -21,15 +16,39 @@ const List<PreviewDevice> defaultPreviewDevices = [
 /// flutter run -d macos -t multi_device_preview/main.dart
 /// ```
 ///
-/// In debug mode every device is rendered as iOS. The override is not applied
-/// in profile mode, where `debugDefaultTargetPlatformOverride` throws.
+/// - [controller] controls the devices and input mirroring from code; when it
+///   is null one is created with [devices].
+/// - [wrapper] wraps the whole preview, for things that must exist once
+///   above all devices (for example slang's `TranslationProvider`, which
+///   holds a global key).
+/// - [targetPlatform] is the platform every device is rendered as, in debug
+///   mode only: assigning `debugDefaultTargetPlatformOverride` throws in
+///   profile mode. Pass null to keep the host's.
+/// - [mouseAsTouch] delivers mouse pointers as touches, so dragging with the
+///   mouse scrolls like a finger. Wheel and trackpad keep their kind.
+/// - [anchorResolvers] add ways to recognize the same element across devices.
+///
+/// When a binding was initialized before (for example `MarionetteBinding`),
+/// it is kept.
 void runMultiDevicePreview({
   required MultiDeviceAppBuilder appBuilder,
   List<PreviewDevice> devices = defaultPreviewDevices,
+  MultiDevicePreviewController? controller,
+  Widget Function(Widget preview)? wrapper,
+  TargetPlatform? targetPlatform = TargetPlatform.iOS,
+  bool mouseAsTouch = true,
+  List<AnchorResolver> anchorResolvers = const [],
 }) {
   WidgetsFlutterBinding.ensureInitialized();
-  if (kDebugMode) {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+  if (kDebugMode && targetPlatform != null) {
+    debugDefaultTargetPlatformOverride = targetPlatform;
   }
-  runApp(MultiDevicePreview(devices: devices, appBuilder: appBuilder));
+  PlatformInput.mouseAsTouch = mouseAsTouch;
+  final Widget preview = MultiDevicePreview(
+    appBuilder: appBuilder,
+    controller: controller,
+    devices: devices,
+    anchorResolvers: anchorResolvers,
+  );
+  runApp(wrapper == null ? preview : wrapper(preview));
 }

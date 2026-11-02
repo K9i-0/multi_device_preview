@@ -1,15 +1,18 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'preview_device.dart';
 
 /// Where each device is placed when laid out in a single row, and how much the
 /// row is scaled down to fit the window.
+@internal
 @immutable
 class MultiDeviceLayout {
   const MultiDeviceLayout._({
     required this.deviceRects,
+    required this.outerRects,
     required this.contentSize,
     required this.scale,
   });
@@ -26,6 +29,7 @@ class MultiDeviceLayout {
     EdgeInsets padding = const EdgeInsets.all(24),
   }) {
     final rects = <Rect>[];
+    final outerRects = <Rect>[];
     var x = padding.left;
     var maxHeight = 0.0;
     for (final device in devices) {
@@ -39,6 +43,7 @@ class MultiDeviceLayout {
           device.screenSize.height,
         ),
       );
+      outerRects.add(Rect.fromLTWH(x, padding.top, outer.width, outer.height));
       x += outer.width + spacing;
       maxHeight = math.max(maxHeight, outer.height);
     }
@@ -65,6 +70,7 @@ class MultiDeviceLayout {
     }
     return MultiDeviceLayout._(
       deviceRects: List<Rect>.unmodifiable(rects),
+      outerRects: List<Rect>.unmodifiable(outerRects),
       contentSize: contentSize,
       scale: scale,
     );
@@ -74,6 +80,10 @@ class MultiDeviceLayout {
   ///
   /// The frame artwork extends outside these rectangles.
   final List<Rect> deviceRects;
+
+  /// The rectangle of each device including its frame, in unscaled content
+  /// coordinates.
+  final List<Rect> outerRects;
 
   /// The unscaled size of the whole row, frames and padding included.
   final Size contentSize;

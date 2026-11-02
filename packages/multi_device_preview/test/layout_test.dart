@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:multi_device_preview/multi_device_preview.dart';
+import 'package:multi_device_preview/src/layout.dart';
 
 void main() {
   const se = PreviewDevice(preset: DevicePresets.iPhoneSe3);
@@ -91,7 +92,7 @@ void main() {
 
     test('handles no devices', () {
       final layout = MultiDeviceLayout.compute(
-        devices: const [],
+        devices: const <PreviewDevice>[],
         available: const Size(800, 600),
         padding: padding,
       );
