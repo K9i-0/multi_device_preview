@@ -18,3 +18,4 @@ doc/api/
 
 # OS
 .DS_Store
+tmp/
