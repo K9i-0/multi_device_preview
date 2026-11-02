@@ -18,16 +18,24 @@ description = "Run static analysis on every workspace package"
 run = "dart analyze --fatal-infos packages"
 
 [tasks.test]
-description = "Run package and example tests"
+description = "Run the tests of every package and the example"
 run = [
   "cd packages/multi_device_preview && flutter test",
+  "cd packages/multi_device_preview_marionette && flutter test",
   "cd packages/multi_device_preview/example && flutter test",
 ]
 
 [tasks.publish-check]
-description = "Validate the package for pub.dev"
-dir = "packages/multi_device_preview"
-run = "flutter pub publish --dry-run"
+description = "Validate the packages for pub.dev"
+run = [
+  "cd packages/multi_device_preview && flutter pub publish --dry-run",
+  "cd packages/multi_device_preview_marionette && flutter pub publish --dry-run",
+]
+
+[tasks.smoke]
+description = "Drive the example on macOS and save screenshots to tmp/smoke"
+dir = "packages/multi_device_preview/example"
+run = "flutter run -d macos -t smoke/main.dart --dart-define=OUT={{config_root}}/tmp/smoke"
 
 [tasks.example]
 description = "Run the example on macOS"
