@@ -94,6 +94,10 @@ class _HomePageState extends State<HomePage> {
                     border: OutlineInputBorder(),
                   ),
                   onChanged: (value) => setState(() => _query = value),
+                  onSubmitted: (value) => ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                        SnackBar(content: Text('Searching for "$value"')),
+                      ),
                 ),
               ),
               for (final product in products)
