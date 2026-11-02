@@ -3,9 +3,11 @@
 //
 //   flutter run -d macos -t smoke/main.dart --dart-define=OUT=/path/to/dir
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:multi_device_preview/multi_device_preview.dart';
 import 'package:multi_device_preview_example/app.dart';
 
@@ -20,8 +22,10 @@ Future<void> main() async {
       PreviewDevice(preset: DevicePresets.pixel9),
     ],
   );
+  final window = GlobalKey();
   runMultiDevicePreview(
     controller: controller,
+    wrapper: (preview) => RepaintBoundary(key: window, child: preview),
     appBuilder: (context, slot) => const ExampleApp(),
   );
   await Directory(_out).create(recursive: true);
@@ -31,6 +35,16 @@ Future<void> main() async {
     await Future<void>.delayed(const Duration(milliseconds: 1500));
     final png = await controller.captureScreenshot(pixelRatio: 1);
     await File('$_out/$name.png').writeAsBytes(png);
+    stdout.writeln('smoke: saved $_out/$name.png');
+  }
+
+  Future<void> shootWindow(String name) async {
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    final boundary =
+        window.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: 2);
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    await File('$_out/$name.png').writeAsBytes(bytes!.buffer.asUint8List());
     stdout.writeln('smoke: saved $_out/$name.png');
   }
 
@@ -103,6 +117,20 @@ Future<void> main() async {
     SelectionChangedCause.keyboard,
   );
   await shoot('2-search');
+  await shootWindow('3-window');
+
+  // Open the settings sheet of the third device (tool UI, not mirrored).
+  Element? label;
+  void findLabel(Element e) {
+    if (e.widget.key == const ValueKey('multi_device_preview.label.2')) {
+      label = e;
+    }
+    if (label == null) e.visitChildElements(findLabel);
+  }
+
+  WidgetsBinding.instance.rootElement!.visitChildElements(findLabel);
+  await tap(label!);
+  await shootWindow('4-sheet');
 
   exit(0);
 }
