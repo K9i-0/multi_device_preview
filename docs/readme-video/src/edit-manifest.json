@@ -16,7 +16,7 @@
   "outroFrames": 120,
   "captions": [
     {
-      "from": 15,
+      "from": 30,
       "to": 110,
       "kicker": "One window",
       "text": "Four devices. One Flutter app. Side by side."
@@ -43,7 +43,7 @@
       "from": 500,
       "to": 690,
       "kicker": "Same element",
-      "text": "Taps hit the same element, even where it sits elsewhere."
+      "text": "Taps hit the same element, wherever it sits on each screen."
     },
     {
       "from": 690,

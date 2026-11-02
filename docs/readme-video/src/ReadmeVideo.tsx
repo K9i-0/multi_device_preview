@@ -166,50 +166,20 @@ const Ripple: React.FC<{at: Point; start: number; color: string; big: boolean}> 
   );
 };
 
-const KeyBadge: React.FC<{at: Point; start: number; label: string}> = ({
-  at,
-  start,
-  label,
-}) => {
-  const frame = useCurrentFrame();
-  const t = frame - start;
-  if (t < 0 || t > 34) return null;
-  const o = interpolate(t, [0, 4, 26, 34], [0, 1, 1, 0], clamp);
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: at[0] + 120,
-        top: at[1] - 74,
-        padding: '6px 16px',
-        borderRadius: 10,
-        background: '#1B1F2E',
-        border: `2px solid ${ACCENT}`,
-        boxShadow: '0 6px 0 #0d0f17, 0 10px 30px rgba(0,0,0,0.5)',
-        fontFamily: MONO,
-        fontWeight: 700,
-        fontSize: 26,
-        color: 'white',
-        opacity: o,
-        transform: `translateY(${interpolate(t, [0, 3, 6], [0, 4, 0], clamp)}px)`,
-      }}
-    >
-      {label} ⏎
-    </div>
-  );
-};
-
 const TypingHud: React.FC<{m: Manifest}> = ({m}) => {
   const frame = useCurrentFrame();
   const {from, to, text, at} = m.typing;
   const start = toComp(m, from);
   const end = toComp(m, to);
-  if (frame < start - 4 || frame > end + 30) return null;
+  const keyTap = m.taps.find((t) => t.key && t.frame >= to);
+  const keyFrame = keyTap ? toComp(m, keyTap.frame) : end;
+  const hideAt = Math.max(end, keyFrame) + 30;
+  if (frame < start - 4 || frame > hideAt) return null;
   const count = Math.min(
     text.length,
     Math.max(0, Math.floor(interpolate(frame, [start, end], [0, text.length]) + 1)),
   );
-  const o = interpolate(frame, [start - 4, start, end + 20, end + 30], [0, 1, 1, 0], clamp);
+  const o = interpolate(frame, [start - 4, start, hideAt - 10, hideAt], [0, 1, 1, 0], clamp);
   return (
     <div
       style={{
@@ -221,14 +191,13 @@ const TypingHud: React.FC<{m: Manifest}> = ({m}) => {
         opacity: o,
       }}
     >
-      {text
-        .slice(0, count)
-        .split('')
+      {[...text.slice(0, count).split(''), ...(keyTap && frame >= keyFrame ? [`${keyTap.key} ⏎`] : [])]
         .map((c, i) => (
           <div
             key={i}
             style={{
-              width: 44,
+              minWidth: 44,
+              padding: '0 12px',
               height: 48,
               borderRadius: 10,
               background: '#1B1F2E',
@@ -241,6 +210,8 @@ const TypingHud: React.FC<{m: Manifest}> = ({m}) => {
               fontWeight: 700,
               fontSize: 26,
               color: 'white',
+              boxSizing: 'border-box',
+              transform: c.length > 1 ? `translateY(${interpolate(frame - keyFrame, [0, 3, 6], [0, 4, 0], clamp)}px)` : undefined,
             }}
           >
             {c}
@@ -392,7 +363,7 @@ const Caption: React.FC<{m: Manifest}> = ({m}) => {
             color: '#0b0d18',
             fontFamily: MONO,
             fontWeight: 700,
-            fontSize: 22,
+            fontSize: 26,
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}
@@ -496,11 +467,6 @@ const FootageWindow: React.FC<{m: Manifest}> = ({m}) => {
           )),
         )}
         <TypingHud m={m} />
-        {m.taps
-          .filter((t) => t.key)
-          .map((t, i) => (
-            <KeyBadge key={i} at={t.points[0]} start={toComp(m, t.frame)} label={t.key!} />
-          ))}
       </div>
       </div>
     </div>
