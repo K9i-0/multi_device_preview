@@ -3,6 +3,8 @@
 Run a Flutter app on several device sizes and text scales side by side in one
 macOS window, and mirror input on one device to all the others.
 
+https://github.com/user-attachments/assets/aa92b3e4-ab8a-411a-95d7-f48cdba56362
+
 | Package | |
 |---|---|
 | [multi_device_preview](packages/multi_device_preview) | The preview, input sync, commands and the `init` command |
