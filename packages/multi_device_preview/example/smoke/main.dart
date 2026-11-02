@@ -1,0 +1,108 @@
+// Drives the example on a real macOS window and saves screenshots, to check
+// input mirroring end to end:
+//
+//   flutter run -d macos -t smoke/main.dart --dart-define=OUT=/path/to/dir
+import 'dart:io';
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:multi_device_preview/multi_device_preview.dart';
+import 'package:multi_device_preview_example/app.dart';
+
+const _out = String.fromEnvironment('OUT', defaultValue: 'build/smoke');
+
+Future<void> main() async {
+  final controller = MultiDevicePreviewController(
+    devices: const [
+      PreviewDevice(preset: DevicePresets.iPhone17),
+      PreviewDevice(preset: DevicePresets.iPhoneSe3),
+      PreviewDevice(preset: DevicePresets.iPhoneSe3, textScale: 1.5),
+      PreviewDevice(preset: DevicePresets.pixel9),
+    ],
+  );
+  runMultiDevicePreview(
+    controller: controller,
+    appBuilder: (context, slot) => const ExampleApp(),
+  );
+  await Directory(_out).create(recursive: true);
+  await Future<void>.delayed(const Duration(seconds: 2));
+
+  Future<void> shoot(String name) async {
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    final png = await controller.captureScreenshot(pixelRatio: 1);
+    await File('$_out/$name.png').writeAsBytes(png);
+    stdout.writeln('smoke: saved $_out/$name.png');
+  }
+
+  var pointer = 100;
+  Future<void> tap(Element target) async {
+    final box = target.renderObject! as RenderBox;
+    final position = box.localToGlobal(box.size.center(Offset.zero));
+    pointer++;
+    GestureBinding.instance.handlePointerEvent(
+      PointerDownEvent(pointer: pointer, device: 50, position: position),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    GestureBinding.instance.handlePointerEvent(
+      PointerUpEvent(pointer: pointer, device: 50, position: position),
+    );
+  }
+
+  Element? findInSource(bool Function(Element) test) {
+    Element? screen;
+    void findScreen(Element e) {
+      if (e.widget.key == DeviceSlot.screenKeyOf(0)) {
+        screen = e;
+        return;
+      }
+      if (screen == null) e.visitChildElements(findScreen);
+    }
+
+    WidgetsBinding.instance.rootElement!.visitChildElements(findScreen);
+    Element? found;
+    void visit(Element e) {
+      if (found != null) return;
+      if (test(e)) {
+        found = e;
+        return;
+      }
+      e.visitChildElements(visit);
+    }
+
+    screen?.visitChildElements(visit);
+    return found;
+  }
+
+  bool text(Element e, String value) =>
+      e.widget is RichText &&
+      (e.widget as RichText).text.toPlainText() == value;
+
+  await shoot('0-initial');
+
+  await tap(
+    findInSource(
+      (e) =>
+          text(e, 'Add Matcha latte') ||
+          e.widget is Tooltip &&
+              (e.widget as Tooltip).message == 'Add Matcha latte',
+    )!,
+  );
+  await tap(findInSource((e) => text(e, 'Flat white'))!);
+  await shoot('1-detail');
+
+  await tap(findInSource((e) => text(e, 'Back to the menu'))!);
+  await Future<void>.delayed(const Duration(milliseconds: 800));
+  final field =
+      findInSource((e) => e is StatefulElement && e.state is EditableTextState)!
+          as StatefulElement;
+  (field.state as EditableTextState).userUpdateTextEditingValue(
+    const TextEditingValue(
+      text: 'latte',
+      selection: TextSelection.collapsed(offset: 5),
+    ),
+    SelectionChangedCause.keyboard,
+  );
+  await shoot('2-search');
+
+  exit(0);
+}
