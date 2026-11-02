@@ -398,7 +398,16 @@ class _DeviceSheetState extends State<_DeviceSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final groups = <DeviceKind, List<DevicePreset>>{};
+    // Phones first: they are what most apps are checked on.
+    final groups = <DeviceKind, List<DevicePreset>>{
+      for (final kind in const [
+        DeviceKind.phone,
+        DeviceKind.foldable,
+        DeviceKind.tablet,
+        DeviceKind.desktop,
+      ])
+        kind: [],
+    };
     for (final preset in DevicePresets.all) {
       groups.putIfAbsent(preset.kind, () => []).add(preset);
     }
@@ -456,36 +465,36 @@ class _DeviceSheetState extends State<_DeviceSheet> {
             shrinkWrap: true,
             padding: const EdgeInsets.only(bottom: 16),
             children: [
-              for (final MapEntry(key: kind, value: presets)
-                  in groups.entries) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                  child: Text(
-                    _kindLabel(kind),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.primary,
+              for (final MapEntry(key: kind, value: presets) in groups.entries)
+                if (presets.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                    child: Text(
+                      _kindLabel(kind),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ),
-                ),
-                for (final preset in presets)
-                  ListTile(
-                    key: ChromeKeys.preset(preset.id),
-                    dense: true,
-                    selected: preset.id == selected,
-                    leading: Icon(
-                      preset.id == selected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                  for (final preset in presets)
+                    ListTile(
+                      key: ChromeKeys.preset(preset.id),
+                      dense: true,
+                      selected: preset.id == selected,
+                      leading: Icon(
+                        preset.id == selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                      ),
+                      title: Text(preset.name),
+                      subtitle: Text(
+                        '${preset.portraitSize.width.round()} × '
+                        '${preset.portraitSize.height.round()}'
+                        '${preset.brand == null ? '' : ' · ${preset.brand}'}',
+                      ),
+                      onTap: () => _select(preset),
                     ),
-                    title: Text(preset.name),
-                    subtitle: Text(
-                      '${preset.portraitSize.width.round()} × '
-                      '${preset.portraitSize.height.round()}'
-                      '${preset.brand == null ? '' : ' · ${preset.brand}'}',
-                    ),
-                    onTap: () => _select(preset),
-                  ),
-              ],
+                ],
             ],
           ),
         ),
