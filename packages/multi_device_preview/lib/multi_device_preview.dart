@@ -4,6 +4,14 @@ library;
 
 export 'package:device_preview/presets.dart' show DevicePreset, DevicePresets;
 
+export 'src/commands.dart'
+    show
+        PreviewCommand,
+        PreviewCommandException,
+        PreviewCommandParam,
+        PreviewParamType,
+        previewCommands,
+        registerPreviewServiceExtensions;
 export 'src/controller.dart'
     show MultiDevicePreviewController, defaultPreviewDevices;
 export 'src/multi_device_preview.dart'

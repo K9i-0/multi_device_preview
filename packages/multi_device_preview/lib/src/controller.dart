@@ -28,11 +28,9 @@ class MultiDevicePreviewController extends ChangeNotifier {
   /// [syncEnabled].
   MultiDevicePreviewController({
     List<PreviewDevice> devices = defaultPreviewDevices,
-    bool syncEnabled = true,
+    this._syncEnabled = true,
   }) : assert(devices.isNotEmpty, 'At least one device is required.'),
-       _entries = [for (final device in devices) _Entry(_nextId++, device)],
-       // ignore: prefer_initializing_formals, keeps the public parameter name.
-       _syncEnabled = syncEnabled;
+       _entries = [for (final device in devices) _Entry(_nextId++, device)];
 
   static int _nextId = 0;
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
@@ -38,6 +39,42 @@ Future<void> settle(WidgetTester tester, {int frames = 10}) async {
   for (var i = 0; i < frames; i++) {
     await tester.pump(const Duration(milliseconds: 60));
   }
+}
+
+/// Waits for [future], which needs real I/O (files, image encoding) and
+/// frames, by alternating real waits with pumps.
+Future<T> completeWithRealAsync<T>(
+  WidgetTester tester,
+  Future<T> future,
+) async {
+  T? result;
+  Object? error;
+  var done = false;
+  unawaited(
+    future.then(
+      (value) {
+        result = value;
+        done = true;
+      },
+      onError: (Object e) {
+        error = e;
+        done = true;
+      },
+    ),
+  );
+  for (var i = 0; i < 200 && !done; i++) {
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
+  if (error != null) {
+    throw error!;
+  }
+  if (!done) {
+    throw StateError('The future did not complete.');
+  }
+  return result as T;
 }
 
 /// Finds [matching] inside the device at [index].

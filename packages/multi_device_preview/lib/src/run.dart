@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import 'commands.dart';
 import 'controller.dart';
 import 'multi_device_preview.dart';
 import 'preview_device.dart';
@@ -27,6 +28,8 @@ import 'sync/input_gate.dart';
 /// - [mouseAsTouch] delivers mouse pointers as touches, so dragging with the
 ///   mouse scrolls like a finger. Wheel and trackpad keep their kind.
 /// - [anchorResolvers] add ways to recognize the same element across devices.
+/// - [registerServiceExtensions] exposes [previewCommands] as VM service
+///   extensions (`ext.multi_device_preview.*`), outside release mode.
 ///
 /// When a binding was initialized before (for example `MarionetteBinding`),
 /// it is kept.
@@ -38,16 +41,21 @@ void runMultiDevicePreview({
   TargetPlatform? targetPlatform = TargetPlatform.iOS,
   bool mouseAsTouch = true,
   List<AnchorResolver> anchorResolvers = const [],
+  bool registerServiceExtensions = true,
 }) {
   WidgetsFlutterBinding.ensureInitialized();
   if (kDebugMode && targetPlatform != null) {
     debugDefaultTargetPlatformOverride = targetPlatform;
   }
   PlatformInput.mouseAsTouch = mouseAsTouch;
+  final effectiveController =
+      controller ?? MultiDevicePreviewController(devices: devices);
+  if (registerServiceExtensions) {
+    registerPreviewServiceExtensions(effectiveController);
+  }
   final Widget preview = MultiDevicePreview(
     appBuilder: appBuilder,
-    controller: controller,
-    devices: devices,
+    controller: effectiveController,
     anchorResolvers: anchorResolvers,
   );
   runApp(wrapper == null ? preview : wrapper(preview));
