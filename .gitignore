@@ -1,0 +1,20 @@
+# Dart / Flutter
+.dart_tool/
+build/
+coverage/
+doc/api/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/Generated.xcconfig
+**/flutter_export_environment.sh
+**/ephemeral/
+**/Pods/
+**/.symlinks/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store

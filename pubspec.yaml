@@ -1,0 +1,10 @@
+name: multi_device_preview_workspace
+description: Workspace root for multi_device_preview.
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - packages/multi_device_preview
+  - packages/multi_device_preview/example
