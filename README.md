@@ -63,7 +63,9 @@ cd packages/multi_device_preview && flutter pub publish
 cd ../multi_device_preview_marionette && flutter pub publish
 ```
 
-Then, on each package's **Admin** page on pub.dev, enable *Automated
+Then, on each package's **Admin** page on pub.dev, transfer the package to
+the verified publisher [k9i.app](https://pub.dev/publishers/k9i.app/packages)
+and enable *Automated
 publishing* from GitHub Actions with repository `K9i-0/multi_device_preview`
 and tag pattern `multi_device_preview-v{{version}}` (or
 `multi_device_preview_marionette-v{{version}}`).
