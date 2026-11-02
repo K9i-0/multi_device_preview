@@ -10,8 +10,11 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  marionette_flutter: ^0.7.0
   multi_device_preview:
     path: ..
+  multi_device_preview_marionette:
+    path: ../../multi_device_preview_marionette
 
 dev_dependencies:
   flutter_test:
