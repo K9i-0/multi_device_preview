@@ -35,6 +35,16 @@ void main() {
     expect(controller.outOfSyncDevices, isEmpty);
   });
 
+  testWidgets('an icon button is matched by its tooltip', (tester) async {
+    await pump(tester);
+
+    await tester.tap(inDevice(0, find.byTooltip('Favorite')));
+    await settle(tester);
+
+    expect(probeOf(tester, 1).favorites, 1);
+    expect(controller.outOfSyncDevices, isEmpty);
+  });
+
   testWidgets('taps on other devices are not mirrored', (tester) async {
     await pump(tester);
 

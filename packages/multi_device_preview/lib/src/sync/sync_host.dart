@@ -12,6 +12,14 @@ abstract interface class SyncHost {
   /// Whether input is mirrored.
   bool get syncEnabled;
 
+  /// A stable identifier of the device at [index], which survives devices
+  /// being added, removed or moved.
+  int idOf(int index);
+
+  /// The current index of the device identified by [id], or null when it was
+  /// removed.
+  int? indexOfId(int id);
+
   /// The element at the root of the app on [device], or null while it is not
   /// mounted.
   Element? appElementOf(int device);

@@ -71,14 +71,12 @@ CapturedPoint capturePoint(AnchorIndex index, Offset globalPosition) {
     }
   }
 
-  final visibleHits = [
-    for (final hit in index.hits)
-      if (index.isVisible(hit)) hit,
-  ];
-
+  // The cheap parent walk runs first; only anchors inside the box pay for a
+  // visibility hit test.
   List<AnchorHit> hitsInside(RenderObject box) => [
-    for (final hit in visibleHits)
-      if (isSelfOrDescendant(hit.renderObject, box)) hit,
+    for (final hit in index.hits)
+      if (isSelfOrDescendant(hit.renderObject, box) && index.isVisible(hit))
+        hit,
   ];
 
   RenderBox? base;

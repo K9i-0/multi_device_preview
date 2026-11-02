@@ -182,6 +182,19 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
   bool get syncEnabled => _controller.syncEnabled;
 
   @override
+  int idOf(int index) => _controller.idAt(index);
+
+  @override
+  int? indexOfId(int id) {
+    for (var i = 0; i < deviceCount; i++) {
+      if (_controller.idAt(i) == id) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  @override
   Element? appElementOf(int device) {
     if (device < 0 || device >= deviceCount) {
       return null;

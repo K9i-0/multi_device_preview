@@ -58,8 +58,9 @@ Anchor? keyAnchor(Element element) {
   return null;
 }
 
-/// The `identifier` of a [Semantics] widget, or its `label` when it has no
-/// identifier. Matches image banners and icon buttons without text.
+/// The `identifier` of a [Semantics] widget, or else its `label`, or else its
+/// `tooltip` (which `IconButton.tooltip` sets). Matches image banners and icon
+/// buttons without text.
 Anchor? semanticsAnchor(Element element) {
   final widget = element.widget;
   if (widget is! Semantics) {
@@ -72,6 +73,10 @@ Anchor? semanticsAnchor(Element element) {
   final label = widget.properties.label;
   if (label != null && label.isNotEmpty) {
     return Anchor('semantics-label', label);
+  }
+  final tooltip = widget.properties.tooltip;
+  if (tooltip != null && tooltip.isNotEmpty) {
+    return Anchor('semantics-tooltip', tooltip);
   }
   return null;
 }

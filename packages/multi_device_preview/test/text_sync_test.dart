@@ -103,6 +103,29 @@ void main() {
     expect(probeOf(tester, 1).submitted, 'query');
   });
 
+  testWidgets('Enter confirming an IME conversion does not submit', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    await tester.showKeyboard(
+      inDevice(0, find.byKey(const ValueKey('search'))),
+    );
+    await settle(tester);
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'にほん',
+        selection: TextSelection.collapsed(offset: 3),
+        composing: TextRange(start: 0, end: 3),
+      ),
+    );
+    await tester.pump();
+    await pressEnter(tester);
+    await settle(tester);
+
+    expect(probeOf(tester, 1).submitted, isEmpty);
+  });
+
   testWidgets('Enter on a "next" field is not sent', (tester) async {
     await pump(tester);
 
