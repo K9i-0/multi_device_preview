@@ -1,5 +1,22 @@
-## 0.0.1-dev.1
+## 1.0.0
 
-- Initial development version: `runMultiDevicePreview` shows one app instance
-  per device side by side, with device_preview frames, per-device screen size,
-  safe areas and text scale, scaled down to fit the window.
+First release.
+
+- `runMultiDevicePreview` and `MultiDevicePreview` run one instance of the app
+  per device, side by side in a single macOS window, with device_preview
+  frames, per-device screen size, safe areas and text scale, scaled to fit.
+- Input sync: pointer input on the first device (taps, long presses, drags,
+  mouse wheel, trackpad) is mirrored to the other devices by matching
+  elements (keys, semantics, images, text, input fields). Imprecise taps are
+  not sent and mark the device as out of sync.
+- Input fields and Enter submissions are mirrored; focus stays on the first
+  device.
+- Toolbar to toggle sync, restart every app and add devices; per-device sheet
+  to switch the preset and text scale while keeping the app state.
+- The simulated status bar follows each app's `SystemUiOverlayStyle`.
+- `MultiDevicePreviewController` to drive the preview from code, including
+  PNG screenshots.
+- `previewCommands`, also exposed as VM service extensions, for tools and AI
+  agents.
+- `dart run multi_device_preview:init` sets up an entry point in the app, or a
+  separate host app with `--host`.

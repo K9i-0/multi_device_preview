@@ -45,6 +45,16 @@ void main() {
     expect(controller.outOfSyncDevices, isEmpty);
   });
 
+  testWidgets('a long press stays a long press', (tester) async {
+    await pump(tester);
+
+    await tester.longPress(inDevice(0, find.text('Row 2')));
+    await settle(tester, frames: 20);
+
+    expect(probeOf(tester, 0).lastItem, 'long Row 2');
+    expect(probeOf(tester, 1).lastItem, 'long Row 2');
+  });
+
   testWidgets('taps on other devices are not mirrored', (tester) async {
     await pump(tester);
 

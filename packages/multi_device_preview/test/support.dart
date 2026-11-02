@@ -189,6 +189,8 @@ class ProbeAppState extends State<ProbeApp> {
                     ListTile(
                       title: Text('Row $i'),
                       onTap: () => setState(() => lastItem = 'Row $i'),
+                      onLongPress: () =>
+                          setState(() => lastItem = 'long Row $i'),
                     ),
                 ],
               ),
