@@ -1,5 +1,11 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+/// Run a Flutter app on multiple device sizes and text scales side by side in
+/// a single macOS window.
+library;
+
+export 'package:device_preview/presets.dart' show DevicePreset, DevicePresets;
+
+export 'src/layout.dart' show MultiDeviceLayout;
+export 'src/multi_device_preview.dart'
+    show MultiDeviceAppBuilder, MultiDevicePreview;
+export 'src/preview_device.dart' show DeviceSlot, PreviewDevice;
+export 'src/run.dart' show defaultPreviewDevices, runMultiDevicePreview;
