@@ -2,11 +2,12 @@
 
 > **Note:** multi_device_preview is an independent package by a different
 > author. It uses the device frames and presets of
-> [device_preview](https://pub.dev/packages/device_preview), but it is not a
-> fork or derivative of it (unlike `device_preview_plus` and similar packages).
+> [device_preview](https://pub.dev/packages/device_preview).
 
 Run your Flutter app on **multiple device sizes and text scales side by side in
 a single macOS window**, to catch overflows and broken layouts at a glance.
+
+![Four devices side by side](https://raw.githubusercontent.com/K9i-0/multi_device_preview/main/packages/multi_device_preview/doc/screenshot.png)
 
 > Status: early development. Showing devices side by side works; mirroring
 > input from one device to the others is in progress.

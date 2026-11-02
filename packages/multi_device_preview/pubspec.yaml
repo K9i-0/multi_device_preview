@@ -11,6 +11,10 @@ topics:
   - layout
   - responsive
 
+screenshots:
+  - description: The example app on four devices side by side.
+    path: doc/screenshot.png
+
 environment:
   sdk: ^3.13.0
   flutter: ">=3.47.0"
