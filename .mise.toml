@@ -1,2 +1,39 @@
 [tools]
 flutter = "3.47.8"
+
+[tasks.setup]
+description = "Resolve workspace dependencies"
+run = "flutter pub get"
+
+[tasks.format]
+description = "Format Dart sources"
+run = "dart format packages"
+
+[tasks.format-check]
+description = "Check Dart formatting without modifying files"
+run = "dart format --output=none --set-exit-if-changed packages"
+
+[tasks.analyze]
+description = "Run static analysis on every workspace package"
+run = "dart analyze --fatal-infos packages"
+
+[tasks.test]
+description = "Run package and example tests"
+run = [
+  "cd packages/multi_device_preview && flutter test",
+  "cd packages/multi_device_preview/example && flutter test",
+]
+
+[tasks.publish-check]
+description = "Validate the package for pub.dev"
+dir = "packages/multi_device_preview"
+run = "flutter pub publish --dry-run"
+
+[tasks.example]
+description = "Run the example on macOS"
+dir = "packages/multi_device_preview/example"
+run = "flutter run -d macos"
+
+[tasks.check]
+description = "Run all local quality checks"
+depends = ["format-check", "analyze", "test"]

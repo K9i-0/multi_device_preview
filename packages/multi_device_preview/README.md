@@ -1,39 +1,81 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# multi_device_preview
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+> **Note:** multi_device_preview is an independent package by a different
+> author. It uses the device frames and presets of
+> [device_preview](https://pub.dev/packages/device_preview), but it is not a
+> fork or derivative of it (unlike `device_preview_plus` and similar packages).
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+Run your Flutter app on **multiple device sizes and text scales side by side in
+a single macOS window**, to catch overflows and broken layouts at a glance.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+> Status: early development. Showing devices side by side works; mirroring
+> input from one device to the others is in progress.
 
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+This is not a replacement for testing on real devices. Native UI, WebViews,
+video and the software keyboard are out of scope.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+Add the package as a dev dependency and create a separate entry point outside
+`lib/` so it never ends up in a release build:
 
 ```dart
-const like = 'sample';
+// multi_device_preview/main.dart
+import 'package:multi_device_preview/multi_device_preview.dart';
+
+import 'package:my_app/app.dart';
+
+void main() {
+  runMultiDevicePreview(
+    devices: const [
+      PreviewDevice(preset: DevicePresets.iPhoneSe3),
+      PreviewDevice(preset: DevicePresets.iPhone17),
+      PreviewDevice(preset: DevicePresets.iPhone17, textScale: 1.5),
+    ],
+    // Called once per device: each device gets its own state.
+    appBuilder: (context, slot) => const MyApp(),
+  );
+}
 ```
 
-## Additional information
+```sh
+flutter run -d macos -t multi_device_preview/main.dart
+```
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+Each device screen has the key `multi_device_preview.screen.<n>` (see
+`DeviceSlot.screenKeyOf`), so tools such as Marionette can target a single
+device.
+
+### macOS entitlements
+
+The preview runs as a macOS app. For a local development tool, disabling the
+sandbox avoids extra setup for local servers and the Keychain. In
+`macos/Runner/DebugProfile.entitlements`:
+
+```xml
+<key>com.apple.security.app-sandbox</key>
+<false/>
+<key>com.apple.security.cs.allow-jit</key>
+<true/>
+<key>com.apple.security.network.client</key>
+<true/>
+<key>com.apple.security.network.server</key>
+<true/>
+```
+
+## Requirements for the app under preview
+
+All devices run in one process, so:
+
+- Avoid global `GlobalKey`s and singletons, or place them once above all
+  devices.
+- Persisted state (SharedPreferences, Keychain) is shared by all devices.
+- Plugins without a macOS implementation throw `MissingPluginException`.
+- Dialogs can use `rootNavigator` / `rootOverlay`: the tool creates no
+  `Navigator` or `Overlay` above the devices, so they open inside the device.
+- Every device is rendered as iOS in debug mode. Run the preview in debug
+  mode; profile mode keeps the macOS look.
+
+## License
+
+MIT
