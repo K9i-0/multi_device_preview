@@ -1,0 +1,335 @@
+{
+  "composition": {
+    "id": "Readme",
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "footage": {
+    "src": "take.mp4",
+    "sourceWidth": 1600,
+    "sourceHeight": 968,
+    "trimBefore": 15,
+    "trimAfter": 842
+  },
+  "introFrames": 75,
+  "outroFrames": 120,
+  "captions": [
+    {
+      "from": 15,
+      "to": 110,
+      "kicker": "One window",
+      "text": "Four devices. One Flutter app. Side by side."
+    },
+    {
+      "from": 110,
+      "to": 180,
+      "kicker": "Scroll",
+      "text": "Scroll the first device, and every device follows."
+    },
+    {
+      "from": 180,
+      "to": 340,
+      "kicker": "Tap",
+      "text": "Tap once, and all of them navigate."
+    },
+    {
+      "from": 340,
+      "to": 500,
+      "kicker": "Type",
+      "text": "Typing and Enter are mirrored, too."
+    },
+    {
+      "from": 500,
+      "to": 690,
+      "kicker": "Same element",
+      "text": "Taps hit the same element, even where it sits elsewhere."
+    },
+    {
+      "from": 690,
+      "to": 772,
+      "kicker": "In sync",
+      "text": "Tabs, dialogs and snackbars stay in step."
+    },
+    {
+      "from": 772,
+      "to": 842,
+      "kicker": "Catch layout bugs",
+      "text": "Mix screen sizes and text scales, and check them all at once."
+    }
+  ],
+  "taps": [
+    {
+      "frame": 182,
+      "points": [
+        [
+          150,
+          490
+        ],
+        [
+          540,
+          534
+        ],
+        [
+          950,
+          612
+        ],
+        [
+          1315,
+          487
+        ]
+      ]
+    },
+    {
+      "frame": 282,
+      "points": [
+        [
+          200,
+          520
+        ],
+        [
+          596,
+          552
+        ],
+        [
+          986,
+          616
+        ],
+        [
+          1386,
+          522
+        ]
+      ]
+    },
+    {
+      "frame": 348,
+      "points": [
+        [
+          200,
+          231
+        ],
+        [
+          596,
+          275
+        ],
+        [
+          986,
+          280
+        ],
+        [
+          1386,
+          228
+        ]
+      ]
+    },
+    {
+      "frame": 423,
+      "key": "Enter",
+      "points": [
+        [
+          200,
+          231
+        ],
+        [
+          596,
+          275
+        ],
+        [
+          986,
+          280
+        ],
+        [
+          1386,
+          228
+        ]
+      ]
+    },
+    {
+      "frame": 512,
+      "points": [
+        [
+          333,
+          298
+        ],
+        [
+          714,
+          342
+        ],
+        [
+          1104,
+          356
+        ],
+        [
+          1518,
+          294
+        ]
+      ]
+    },
+    {
+      "frame": 530,
+      "points": [
+        [
+          333,
+          298
+        ],
+        [
+          714,
+          342
+        ],
+        [
+          1104,
+          356
+        ],
+        [
+          1518,
+          294
+        ]
+      ]
+    },
+    {
+      "frame": 579,
+      "points": [
+        [
+          353,
+          170
+        ],
+        [
+          734,
+          214
+        ],
+        [
+          1124,
+          216
+        ],
+        [
+          1539,
+          167
+        ]
+      ]
+    },
+    {
+      "frame": 663,
+      "points": [
+        [
+          274,
+          512
+        ],
+        [
+          666,
+          502
+        ],
+        [
+          1051,
+          510
+        ],
+        [
+          1456,
+          538
+        ]
+      ]
+    },
+    {
+      "frame": 708,
+      "points": [
+        [
+          204,
+          760
+        ],
+        [
+          596,
+          693
+        ],
+        [
+          986,
+          693
+        ],
+        [
+          1386,
+          814
+        ]
+      ]
+    },
+    {
+      "frame": 768,
+      "points": [
+        [
+          91,
+          760
+        ],
+        [
+          491,
+          693
+        ],
+        [
+          881,
+          693
+        ],
+        [
+          1270,
+          814
+        ]
+      ]
+    }
+  ],
+  "drags": [
+    {
+      "frame": 47,
+      "from": [
+        200,
+        588
+      ],
+      "to": [
+        200,
+        328
+      ]
+    },
+    {
+      "frame": 114,
+      "from": [
+        200,
+        328
+      ],
+      "to": [
+        200,
+        588
+      ]
+    }
+  ],
+  "typing": {
+    "from": 371,
+    "to": 408,
+    "text": "latte",
+    "at": [
+      200,
+      231
+    ]
+  },
+  "highlight": {
+    "from": 776,
+    "to": 842,
+    "box": [
+      806,
+      60,
+      364,
+      776
+    ],
+    "label": "Text scale 150%"
+  },
+  "outro": {
+    "commands": [
+      "flutter pub add dev:multi_device_preview",
+      "dart run multi_device_preview:init"
+    ],
+    "url": "pub.dev/packages/multi_device_preview"
+  },
+  "footageStart": 60,
+  "camera": {
+    "from": 774,
+    "to": 812,
+    "scale": 1.18,
+    "origin": [
+      988,
+      420
+    ]
+  }
+}

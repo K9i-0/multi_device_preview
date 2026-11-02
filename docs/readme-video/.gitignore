@@ -1,0 +1,6 @@
+node_modules/
+out/
+public/*.mp4
+public/*.mov
+scripts/post
+scripts/wininfo
