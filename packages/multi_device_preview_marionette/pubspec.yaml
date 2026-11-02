@@ -1,0 +1,29 @@
+name: multi_device_preview_marionette
+description: >-
+  Exposes multi_device_preview commands (devices, input sync, restart,
+  screenshots, trackpad scroll) as Marionette MCP tools for AI agents.
+version: 1.0.0
+repository: https://github.com/K9i-0/multi_device_preview/tree/main/packages/multi_device_preview_marionette
+issue_tracker: https://github.com/K9i-0/multi_device_preview/issues
+topics:
+  - device-preview
+  - mcp
+  - ai
+  - testing
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  marionette_flutter: ^0.7.0
+  multi_device_preview: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

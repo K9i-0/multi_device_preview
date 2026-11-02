@@ -8,3 +8,4 @@ environment:
 workspace:
   - packages/multi_device_preview
   - packages/multi_device_preview/example
+  - packages/multi_device_preview_marionette
