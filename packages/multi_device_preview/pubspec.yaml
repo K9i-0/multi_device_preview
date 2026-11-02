@@ -22,7 +22,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  args: ^2.4.0
+  args: ^2.5.0
   device_preview: ^3.0.0
   flutter:
     sdk: flutter
