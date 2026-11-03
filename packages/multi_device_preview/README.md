@@ -1,5 +1,10 @@
 # multi_device_preview
 
+[![pub package](https://img.shields.io/pub/v/multi_device_preview.svg)](https://pub.dev/packages/multi_device_preview)
+[![pub points](https://img.shields.io/pub/points/multi_device_preview)](https://pub.dev/packages/multi_device_preview/score)
+[![CI](https://github.com/K9i-0/multi_device_preview/actions/workflows/ci.yml/badge.svg)](https://github.com/K9i-0/multi_device_preview/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/K9i-0/multi_device_preview/blob/main/LICENSE)
+
 > **Note:** multi_device_preview is an independent package by a different
 > author. It uses the device frames and presets of
 > [device_preview](https://pub.dev/packages/device_preview).

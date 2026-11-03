@@ -1,14 +1,36 @@
 # multi_device_preview
 
+[![pub package](https://img.shields.io/pub/v/multi_device_preview.svg)](https://pub.dev/packages/multi_device_preview)
+[![CI](https://github.com/K9i-0/multi_device_preview/actions/workflows/ci.yml/badge.svg)](https://github.com/K9i-0/multi_device_preview/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Run a Flutter app on several device sizes and text scales side by side in one
 macOS window, and mirror input on one device to all the others.
 
 https://github.com/user-attachments/assets/aa92b3e4-ab8a-411a-95d7-f48cdba56362
 
-| Package | |
-|---|---|
-| [multi_device_preview](packages/multi_device_preview) | The preview, input sync, commands and the `init` command |
-| [multi_device_preview_marionette](packages/multi_device_preview_marionette) | Marionette MCP tools for AI agents |
+- Each device runs its own instance of your app; taps, scrolls and text on
+  the first device are mirrored to the same elements on the others.
+- device_preview frames and presets, plus the iPhone Duo closed and open.
+- App Store screenshots at the exact pixel size, with a settable status bar
+  time (`9:41` by default).
+- AI agents can drive it through Marionette MCP.
+
+| Package | pub.dev | |
+|---|---|---|
+| [multi_device_preview](packages/multi_device_preview) | [![pub](https://img.shields.io/pub/v/multi_device_preview.svg)](https://pub.dev/packages/multi_device_preview) | The preview, input sync, commands and the `init` command |
+| [multi_device_preview_marionette](packages/multi_device_preview_marionette) | [![pub](https://img.shields.io/pub/v/multi_device_preview_marionette.svg)](https://pub.dev/packages/multi_device_preview_marionette) | Marionette MCP tools for AI agents |
+
+## Quick start
+
+```sh
+flutter pub add dev:multi_device_preview
+dart run multi_device_preview:init
+flutter run -d macos -t multi_device_preview/main.dart
+```
+
+See the [package README](packages/multi_device_preview/README.md) for the
+separate host app setup, input sync and automation.
 
 The example lives in [packages/multi_device_preview/example](packages/multi_device_preview/example),
 and the design notes in [docs/design_notes.md](docs/design_notes.md) (Japanese).

@@ -1,5 +1,9 @@
 # multi_device_preview_marionette
 
+[![pub package](https://img.shields.io/pub/v/multi_device_preview_marionette.svg)](https://pub.dev/packages/multi_device_preview_marionette)
+[![CI](https://github.com/K9i-0/multi_device_preview/actions/workflows/ci.yml/badge.svg)](https://github.com/K9i-0/multi_device_preview/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/K9i-0/multi_device_preview/blob/main/LICENSE)
+
 Lets AI agents drive [multi_device_preview](https://pub.dev/packages/multi_device_preview)
 through [Marionette MCP](https://pub.dev/packages/marionette_flutter): every
 preview command becomes an MCP tool with a typed schema.
