@@ -124,10 +124,10 @@ show up in the device sheet and in `listPresets` next to `DevicePresets`.
 
 Their screen outlines come from the iOS simulator (the closed one is barely
 rounded on the hinge side); the rest of the frame is a rough outline. The
-safe areas of the open state come from the simulator; those of the closed
-state are approximate. Like the
-simulator, the open state draws its status bar (time, Wi-Fi) in the right
-safe area.
+safe areas come from the iOS 27.2 simulator: an 84 pt control strip on the
+right (left of a closed one held in landscape, next to the camera) and no top
+inset. Like the simulator, both draw their status bar (time, Wi-Fi) at the top
+of the strip.
 
 ### App Store screenshots
 

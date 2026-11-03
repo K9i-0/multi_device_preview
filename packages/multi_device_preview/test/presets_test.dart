@@ -8,15 +8,33 @@ import 'package:multi_device_preview/src/presets.dart';
 import 'support.dart';
 
 void main() {
-  test('only the open iPhone Duo has a side status bar', () {
-    expect(sideStatusBarOf(MultiDevicePresets.iPhoneDuo), isNull);
+  test('the iPhone Duo has a side status bar in its right strip', () {
     expect(sideStatusBarOf(DevicePresets.iPhone17), isNull);
-    final bar = sideStatusBarOf(MultiDevicePresets.iPhoneDuoOpen)!;
-    final drawing = SvgDrawing.parse(bar.artwork);
-    expect(drawing.isEmpty, isFalse);
-    // It fits in the right safe area.
-    final padding = MultiDevicePresets.iPhoneDuoOpen.portraitPadding;
-    expect(bar.right + drawing.size.width, lessThanOrEqualTo(padding.right));
+    for (final preset in MultiDevicePresets.all) {
+      final bar = sideStatusBarOf(preset)!;
+      final drawing = SvgDrawing.parse(bar.artwork);
+      expect(drawing.isEmpty, isFalse);
+      // It fits in the right safe area.
+      expect(
+        bar.right + drawing.size.width,
+        lessThanOrEqualTo(preset.portraitPadding.right),
+      );
+      // No top status bar: the strip is the only inset besides the bottom.
+      expect(preset.portraitPadding.top, 0);
+      expect(preset.systemUi?.statusBar, isNull);
+    }
+  });
+
+  test('the closed iPhone Duo matches the simulator safe areas', () {
+    const preset = MultiDevicePresets.iPhoneDuo;
+    expect(
+      preset.portraitPadding,
+      const EdgeInsets.only(right: 84, bottom: 34),
+    );
+    expect(
+      preset.resolve(orientation: Orientation.landscape).padding,
+      const EdgeInsets.only(left: 84, bottom: 34),
+    );
   });
 
   testWidgets('the status bar time replaces the preset artwork', (

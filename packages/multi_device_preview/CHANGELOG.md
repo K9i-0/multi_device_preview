@@ -8,6 +8,10 @@
   `addDevice` take an `orientation` parameter (`portrait` or `landscape`) and
   `getState` reports each device's orientation.
 - `PreviewDevice.copyWith`.
+- `MultiDevicePresets.iPhoneDuo` (closed) uses the safe areas of the iOS 27.2
+  simulator: right 84 and bottom 34 with no top inset in portrait, left 84
+  and bottom 34 in landscape. Its status bar is drawn at the top of the right
+  strip, like the open one, instead of along the top.
 
 ## 1.1.0
 
