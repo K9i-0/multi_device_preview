@@ -7,6 +7,9 @@
 - `MultiDevicePreviewController.captureScreen` and `saveScreenshot` with
   `frame=false` save one device's screen for App Store Connect: no frame, at
   the device pixel ratio, without an alpha channel.
+- `statusBarTime` on `runMultiDevicePreview` and `MultiDevicePreview` sets the
+  time in every simulated status bar. It defaults to `9:41` instead of the
+  `5:13` of device_preview's artwork.
 
 ## 1.0.0
 

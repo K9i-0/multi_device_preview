@@ -20,6 +20,7 @@ Future<void> pumpPreview(
   required MultiDeviceAppBuilder appBuilder,
   bool showToolbar = true,
   List<AnchorResolver> anchorResolvers = const [],
+  String statusBarTime = '9:41',
 }) async {
   tester.view.physicalSize = const Size(2400, 1600);
   tester.view.devicePixelRatio = 1;
@@ -30,6 +31,7 @@ Future<void> pumpPreview(
       appBuilder: appBuilder,
       showToolbar: showToolbar,
       anchorResolvers: anchorResolvers,
+      statusBarTime: statusBarTime,
     ),
   );
 }

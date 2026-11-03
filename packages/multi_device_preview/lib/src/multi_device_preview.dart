@@ -56,6 +56,7 @@ class MultiDevicePreview extends StatefulWidget {
     this.anchorResolvers = const [],
     this.showToolbar = true,
     this.backgroundColor = const Color(0xFF1B1B1F),
+    this.statusBarTime = '9:41',
   });
 
   /// Builds the app instance for each device.
@@ -77,6 +78,10 @@ class MultiDevicePreview extends StatefulWidget {
 
   /// The color behind the devices.
   final Color backgroundColor;
+
+  /// The time shown in the simulated status bar of every device, for example
+  /// `9:41` as in Apple's screenshots.
+  final String statusBarTime;
 
   @override
   State<MultiDevicePreview> createState() => _MultiDevicePreviewState();
@@ -453,6 +458,7 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
       boundaryKey: _boundaryKeys.putIfAbsent(id, GlobalKey.new),
       screenBoundaryKey: _screenBoundaryKeys.putIfAbsent(id, GlobalKey.new),
       bareScreen: _bareScreens[id]!,
+      statusBarTime: widget.statusBarTime,
       probeKey: _probeKeys.putIfAbsent(id, GlobalKey.new),
       overlayStyle: _overlayStyles[id]!,
       gateClosed: index > 0 && _controller.syncEnabled && devices.length > 1,
@@ -471,6 +477,7 @@ class _DeviceScreen extends StatefulWidget {
     required this.boundaryKey,
     required this.screenBoundaryKey,
     required this.bareScreen,
+    required this.statusBarTime,
     required this.probeKey,
     required this.overlayStyle,
     required this.gateClosed,
@@ -484,6 +491,7 @@ class _DeviceScreen extends StatefulWidget {
   final GlobalKey boundaryKey;
   final GlobalKey screenBoundaryKey;
   final ValueListenable<bool> bareScreen;
+  final String statusBarTime;
   final GlobalKey probeKey;
   final ValueListenable<SystemUiOverlayStyle?> overlayStyle;
   final bool gateClosed;
@@ -507,7 +515,25 @@ class _DeviceScreenState extends State<_DeviceScreen> {
   // While the screen is captured bare, the frame (and with it the screen clip)
   // is dropped; the system UI is still painted.
   DeviceSimulation _resolveSimulation() {
-    final simulation = widget.slot.device.simulation;
+    var simulation = widget.slot.device.simulation;
+    // The time is painted by _StatusBarPainter instead of the preset's fixed
+    // artwork, so it can be set.
+    final systemUi = simulation.systemUi;
+    final statusBar = systemUi?.statusBar;
+    if (systemUi != null && statusBar != null && statusBar.leading.isNotEmpty) {
+      simulation = simulation.copyWith(
+        systemUi: SystemUiSimulation(
+          statusBar: SystemUiBar(
+            center: statusBar.center,
+            trailing: statusBar.trailing,
+            inset: statusBar.inset,
+            bottomInset: statusBar.bottomInset,
+          ),
+          navigationBar: systemUi.navigationBar,
+          platform: systemUi.platform,
+        ),
+      );
+    }
     return widget.bareScreen.value
         ? simulation.copyWith(frame: null)
         : simulation;
@@ -567,19 +593,19 @@ class _DeviceScreenState extends State<_DeviceScreen> {
         padding: device.frameOutsets,
         child: RepaintBoundary(
           key: widget.screenBoundaryKey,
-          child: DevicePreviewFrame(
-            simulation: _simulation,
-            overlayStyle: widget.overlayStyle,
-            // Always present, so switching presets keeps the app's element
-            // tree (and state); it paints nothing for most devices.
-            child: CustomPaint(
-              foregroundPainter: _SideStatusBarPainter(
-                bar: simulation.showSystemUi
-                    ? sideStatusBarOf(device.preset)
-                    : null,
-                overlayStyle: widget.overlayStyle,
-                platformBrightness: simulation.platformBrightness,
-              ),
+          // Over the frame's system UI, so a tinted Android status bar does
+          // not cover the time.
+          child: CustomPaint(
+            foregroundPainter: _StatusBarPainter(
+              time: widget.statusBarTime,
+              statusBar: device.preset.systemUi?.statusBar,
+              side: sideStatusBarOf(device.preset),
+              simulation: simulation,
+              overlayStyle: widget.overlayStyle,
+            ),
+            child: DevicePreviewFrame(
+              simulation: _simulation,
+              overlayStyle: widget.overlayStyle,
               child: MediaQuery(
                 data: base.copyWith(
                   size: device.screenSize,
@@ -682,53 +708,130 @@ class RenderOverlayStyleProbe extends RenderProxyBox {
   }
 }
 
-/// Paints a [SideStatusBar] over the app, tinted like the simulated status
-/// bar.
-class _SideStatusBarPainter extends CustomPainter {
-  _SideStatusBarPainter({
-    required this.bar,
+/// Paints the parts of the status bar this package draws itself, over the
+/// frame's system UI: the time (in place of the preset's fixed artwork) and
+/// the [SideStatusBar] of devices that have one.
+class _StatusBarPainter extends CustomPainter {
+  _StatusBarPainter({
+    required this.time,
+    required this.statusBar,
+    required this.side,
+    required this.simulation,
     required this.overlayStyle,
-    required this.platformBrightness,
   }) : super(repaint: overlayStyle);
 
-  final SideStatusBar? bar;
+  final String time;
+
+  /// The preset's own status bar, whose time artwork tells where the time
+  /// goes.
+  final SystemUiBar? statusBar;
+  final SideStatusBar? side;
+  final DeviceSimulation simulation;
   final ValueListenable<SystemUiOverlayStyle?> overlayStyle;
-  final Brightness? platformBrightness;
 
   static final Map<String, SvgDrawing> _drawings = {};
 
+  static SvgDrawing _drawing(String source) =>
+      _drawings.putIfAbsent(source, () => SvgDrawing.parse(source));
+
+  TargetPlatform get _platform =>
+      simulation.systemUi?.platform ?? TargetPlatform.iOS;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final bar = this.bar;
-    if (bar == null) {
+    if (!simulation.showSystemUi) {
       return;
     }
-    final drawing = _drawings.putIfAbsent(
-      bar.artwork,
-      () => SvgDrawing.parse(bar.artwork),
-    );
-    final colors = SystemUiColors.resolve(
+    final color = SystemUiColors.resolve(
       style: overlayStyle.value,
       platformBrightness:
-          platformBrightness ??
+          simulation.platformBrightness ??
           ui.PlatformDispatcher.instance.platformBrightness,
-      platform: TargetPlatform.iOS,
-    );
-    drawing.paintInto(
-      canvas,
-      Rect.fromLTWH(
-        size.width - bar.right - drawing.size.width,
-        bar.top,
+      platform: _platform,
+    ).statusBarIcons;
+    final padding =
+        simulation.padding ?? simulation.viewPadding ?? EdgeInsets.zero;
+    final bar = statusBar;
+    if (bar != null && bar.leading.isNotEmpty && padding.top > 0) {
+      // Where device_preview places the leading artwork.
+      final art = _drawing(bar.leading).size;
+      final top = bar.bottomInset == null
+          ? padding.top / 2 - art.height / 2
+          : padding.top - bar.bottomInset! - art.height;
+      final clampedTop = math.max(0.0, math.min(top, padding.top - art.height));
+      final android = _platform == TargetPlatform.android;
+      _paintTime(
+        canvas,
+        x: android ? bar.inset : bar.inset + art.width / 2,
+        centered: !android,
+        baseline: clampedTop + art.height,
+        height: art.height,
+        color: color,
+      );
+    }
+    final side = this.side;
+    if (side != null) {
+      final drawing = _drawing(side.artwork);
+      final rect = Rect.fromLTWH(
+        size.width - side.right - drawing.size.width,
+        side.top,
         drawing.size.width,
         drawing.size.height,
+      );
+      drawing.paintInto(canvas, rect, currentColor: color);
+      _paintTime(
+        canvas,
+        x: rect.center.dx,
+        centered: true,
+        baseline: rect.top + side.timeBaseline,
+        height: side.timeHeight,
+        color: color,
+      );
+    }
+  }
+
+  // Digits are about as tall as capitals, 0.71 em in the system fonts.
+  void _paintTime(
+    Canvas canvas, {
+    required double x,
+    required bool centered,
+    required double baseline,
+    required double height,
+    required Color color,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: time,
+        style: TextStyle(
+          fontFamily: 'CupertinoSystemText',
+          fontSize: height / 0.71,
+          fontWeight: _platform == TargetPlatform.android
+              ? FontWeight.w500
+              : FontWeight.w600,
+          height: 1,
+          color: color,
+        ),
       ),
-      currentColor: colors.statusBarIcons,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final ascent = painter.computeDistanceToActualBaseline(
+      TextBaseline.alphabetic,
     );
+    painter.paint(
+      canvas,
+      Offset(centered ? x - painter.width / 2 : x, baseline - ascent),
+    );
+    painter.dispose();
   }
 
   @override
-  bool shouldRepaint(_SideStatusBarPainter oldDelegate) =>
-      oldDelegate.bar != bar ||
-      oldDelegate.overlayStyle != overlayStyle ||
-      oldDelegate.platformBrightness != platformBrightness;
+  String toString() => '_StatusBarPainter($time)';
+
+  @override
+  bool shouldRepaint(_StatusBarPainter oldDelegate) =>
+      oldDelegate.time != time ||
+      oldDelegate.statusBar != statusBar ||
+      oldDelegate.side != side ||
+      oldDelegate.simulation != simulation ||
+      oldDelegate.overlayStyle != overlayStyle;
 }

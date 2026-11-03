@@ -98,6 +98,8 @@ Other options of `runMultiDevicePreview`:
   Android presets change the size, safe areas and frame.
 - `mouseAsTouch`: the mouse acts as a finger (default), so dragging scrolls.
 - `anchorResolvers`: see [Matching elements](#matching-elements).
+- `statusBarTime`: the time in every simulated status bar. Defaults to
+  `9:41`, as in Apple's screenshots.
 
 ### Bundled presets
 
@@ -109,8 +111,10 @@ show up in the device sheet and in `listPresets` next to `DevicePresets`.
 | `MultiDevicePresets.iPhoneDuo` | `apple-iphone-duo` | Closed, outer display: 466×678 pt @3x |
 | `MultiDevicePresets.iPhoneDuoOpen` | `apple-iphone-duo-open` | Open, inner display in landscape: 951×669 pt @3x |
 
-Their frames are rough outlines. The safe areas of the open state come from
-the iOS simulator; those of the closed state are approximate. Like the
+Their screen outlines come from the iOS simulator (the closed one is barely
+rounded on the hinge side); the rest of the frame is a rough outline. The
+safe areas of the open state come from the simulator; those of the closed
+state are approximate. Like the
 simulator, the open state draws its status bar (time, Wi-Fi) in the right
 safe area.
 

@@ -28,6 +28,7 @@ import 'sync/input_gate.dart';
 /// - [mouseAsTouch] delivers mouse pointers as touches, so dragging with the
 ///   mouse scrolls like a finger. Wheel and trackpad keep their kind.
 /// - [anchorResolvers] add ways to recognize the same element across devices.
+/// - [statusBarTime] is the time shown in every simulated status bar.
 /// - [registerServiceExtensions] exposes [previewCommands] as VM service
 ///   extensions (`ext.multi_device_preview.*`), outside release mode.
 ///
@@ -42,6 +43,7 @@ void runMultiDevicePreview({
   bool mouseAsTouch = true,
   List<AnchorResolver> anchorResolvers = const [],
   bool registerServiceExtensions = true,
+  String statusBarTime = '9:41',
 }) {
   WidgetsFlutterBinding.ensureInitialized();
   if (kDebugMode && targetPlatform != null) {
@@ -57,6 +59,7 @@ void runMultiDevicePreview({
     appBuilder: appBuilder,
     controller: effectiveController,
     anchorResolvers: anchorResolvers,
+    statusBarTime: statusBarTime,
   );
   runApp(wrapper == null ? preview : wrapper(preview));
 }
