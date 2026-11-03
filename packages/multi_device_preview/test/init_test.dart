@@ -53,6 +53,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - shorebird.yaml
   fonts:
     - family: Brand
       fonts:
@@ -69,6 +70,7 @@ void main() {
   _write('app/lib/src/shop_app.dart', 'class ShopApp {}');
   _write('app/assets/images/logo.png', 'png');
   _write('app/fonts/Brand-Regular.ttf', 'ttf');
+  _write('app/shorebird.yaml', 'app_id: x');
 }
 
 /// Pretends to be `flutter create`: creates a macOS runner and, for a new
@@ -171,7 +173,7 @@ void main() {
     expect(pubspec['name'], 'shop_preview');
     expect(pubspec['dependencies']['shop'], {'path': '../app'});
     expect(pubspec['dependencies']['multi_device_preview'], '^1.0.0');
-    expect(pubspec['flutter']['assets'], ['assets/images/']);
+    expect(pubspec['flutter']['assets'], ['assets/images/', 'shorebird.yaml']);
     expect(pubspec['flutter']['fonts'][0]['family'], 'Brand');
     expect(pubspec['flutter']['uses-material-design'], isTrue);
     expect(
@@ -184,6 +186,8 @@ void main() {
           .existsSync(),
       isTrue,
     );
+    // A file listed directly in the app's root is linked too.
+    expect(_read('shop_preview/shorebird.yaml'), 'app_id: x');
     expect(
       _read('shop_preview/lib/main.dart'),
       contains("import 'package:shop/src/shop_app.dart';"),

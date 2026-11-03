@@ -520,7 +520,8 @@ Object? _plain(Object? node) => switch (node) {
 };
 
 /// The top-level directories that the `assets` or `fonts` entries in
-/// [section] live in.
+/// [section] live in, and the files listed directly in the app's root (for
+/// example `shorebird.yaml`).
 Set<String> _assetRoots(YamlList section) {
   final paths = <String>[];
   void collect(Object? node) {
@@ -542,7 +543,9 @@ Set<String> _assetRoots(YamlList section) {
   collect(section);
   return {
     for (final path in paths)
-      if (p.posix.split(path) case [final root, _, ...]) root,
+      if (p.posix.split(p.posix.normalize(path)) case [final root, ...]
+          when root != '.' && root != '..' && root != '/')
+        root,
   };
 }
 
