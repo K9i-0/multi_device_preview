@@ -40,6 +40,7 @@ void main() {
       'preset': DevicePresets.iPhoneSe3.id,
       'name': DevicePresets.iPhoneSe3.name,
       'textScale': 1.0,
+      'orientation': 'portrait',
       'width': DevicePresets.iPhoneSe3.portraitSize.width,
       'height': DevicePresets.iPhoneSe3.portraitSize.height,
       'screenKey': 'multi_device_preview.screen.1',
@@ -87,6 +88,35 @@ void main() {
     expect(ids, containsAll(['apple-iphone-duo', 'apple-iphone-duo-open']));
   });
 
+  test('setDevice and addDevice set the orientation', () async {
+    await commands['setDevice']!.run({
+      'index': '1',
+      'preset': DevicePresets.iPadPro13M5.id,
+      'orientation': 'landscape',
+    });
+    expect(controller.devices[1].orientation, Orientation.landscape);
+    // Other changes keep the orientation.
+    final state = await commands['setDevice']!.run({
+      'index': '1',
+      'textScale': '1.5',
+    });
+    final device = (state['devices']! as List<Object?>)[1]! as Map;
+    expect(device['orientation'], 'landscape');
+    expect(device['width'], 1376);
+    expect(device['height'], 1032);
+
+    await commands['setDevice']!.run({'index': '1', 'orientation': 'portrait'});
+    expect(controller.devices[1].orientation, Orientation.portrait);
+
+    await commands['addDevice']!.run({
+      'preset': DevicePresets.iPhone17.id,
+      'orientation': 'landscape',
+    });
+    expect(controller.devices.last.orientation, Orientation.landscape);
+    await commands['addDevice']!.run({'preset': DevicePresets.iPhone17.id});
+    expect(controller.devices.last.orientation, Orientation.portrait);
+  });
+
   test('setDevice accepts the bundled presets', () async {
     await commands['setDevice']!.run({
       'index': '0',
@@ -108,6 +138,7 @@ void main() {
     await expectInvalid('setDevice', {'index': 'one'});
     await expectInvalid('setDevice', {'index': '0', 'preset': 'nokia-3310'});
     await expectInvalid('setDevice', {'index': '0', 'textScale': '-1'});
+    await expectInvalid('setDevice', {'index': '0', 'orientation': 'side'});
     await expectInvalid('addDevice', {});
     await expectInvalid('saveScreenshot', {});
     await expectInvalid('saveScreenshot', {
@@ -189,6 +220,31 @@ void main() {
       find.byType(DevicePreviewFrame),
     );
     expect(frames.every((f) => f.simulation.value?.frame != null), isTrue);
+  });
+
+  testWidgets('a landscape screen is captured at its landscape size', (
+    tester,
+  ) async {
+    controller.setDevice(
+      1,
+      const PreviewDevice(
+        preset: DevicePresets.iPadPro13M5,
+        orientation: Orientation.landscape,
+      ),
+    );
+    await pumpPreview(
+      tester,
+      controller: controller,
+      appBuilder: (context, slot) => const ProbeApp(),
+    );
+    final png = await completeWithRealAsync(
+      tester,
+      controller.captureScreen(1),
+    );
+    final header = ByteData.sublistView(png, 16, 24);
+    expect(header.getUint32(0), 2752);
+    expect(header.getUint32(4), 2064);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('panZoom scrolls like a trackpad and is mirrored', (

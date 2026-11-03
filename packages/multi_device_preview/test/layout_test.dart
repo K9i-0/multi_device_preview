@@ -17,6 +17,40 @@ void main() {
       expect(iphone.frameOutsets.bottom, greaterThanOrEqualTo(0));
     });
 
+    test('landscape swaps the size, uses landscape safe areas and rotates '
+        'the frame', () {
+      const preset = DevicePresets.iPadPro13M5;
+      const landscape = PreviewDevice(
+        preset: preset,
+        orientation: Orientation.landscape,
+      );
+      expect(landscape.screenSize, const Size(1376, 1032));
+      expect(landscape.simulation.screenSize, landscape.screenSize);
+      expect(landscape.simulation.orientation, Orientation.landscape);
+      expect(landscape.simulation.padding, preset.landscapePadding);
+      expect(landscape.frameOutsets, const EdgeInsets.all(46));
+      expect(landscape.outerSize, preset.frame!.size.flipped);
+
+      const portrait = PreviewDevice(preset: preset);
+      expect(portrait.screenSize, preset.portraitSize);
+      expect(portrait.simulation.padding, preset.portraitPadding);
+      expect(portrait.outerSize, preset.frame!.size);
+    });
+
+    test('orientation takes part in equality and copyWith', () {
+      const landscape = PreviewDevice(
+        preset: DevicePresets.iPhone17,
+        orientation: Orientation.landscape,
+      );
+      expect(landscape, isNot(iphone));
+      expect(iphone.copyWith(orientation: Orientation.landscape), landscape);
+      expect(
+        landscape.copyWith(textScale: 2).orientation,
+        Orientation.landscape,
+      );
+      expect('$landscape', contains('landscape'));
+    });
+
     test('a preset without a frame has no outsets', () {
       const window = PreviewDevice(
         preset: DevicePreset(

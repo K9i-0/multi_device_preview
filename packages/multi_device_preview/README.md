@@ -93,6 +93,12 @@ void main() {
 }
 ```
 
+A device can be held in landscape with
+`PreviewDevice(preset: ..., orientation: Orientation.landscape)`, or from the
+Orientation choice in its device sheet. The screen size is swapped, the
+preset's landscape safe areas are used and the frame is rotated a quarter
+turn, as device_preview does.
+
 Other options of `runMultiDevicePreview`:
 
 - `controller`: a `MultiDevicePreviewController` to change devices, toggle
@@ -131,7 +137,8 @@ no frame or rounded corners, at the preset's device pixel ratio, and without
 an alpha channel, which App Store Connect rejects. The simulated status bar
 and home indicator are kept. The size is the one App Store Connect asks for,
 for example 1398×2034 for the closed iPhone Duo and 2853×2007 for the open
-one.
+one. A device in landscape is captured in landscape: 2752×2064 for
+`DevicePresets.iPadPro13M5`, with the status bar along the long edge.
 
 ```dart
 final png = await controller.captureScreen(0);
@@ -254,11 +261,11 @@ Every action of the toolbar, and more, is available as a command
 
 | Command | What it does |
 |---|---|
-| `getState` | Devices (preset, text scale, size, screen key, out-of-sync) and sync state |
-| `listPresets` | Preset ids |
+| `getState` | Devices (preset, text scale, orientation, size, screen key, out-of-sync) and sync state |
+| `listPresets` | Preset ids and portrait sizes |
 | `setSync` | Turns input sync on or off |
 | `restart` | Rebuilds every app from scratch |
-| `setDevice` / `addDevice` / `removeDevice` | Changes the devices |
+| `setDevice` / `addDevice` / `removeDevice` | Changes the devices; `orientation=landscape` rotates one |
 | `saveScreenshot` | Writes a PNG of all devices, or one, to a file. `frame=false` writes a store screenshot of one device |
 | `panZoom` | Scrolls with a trackpad gesture, mirrored like a real one |
 

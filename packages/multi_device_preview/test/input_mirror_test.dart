@@ -35,6 +35,23 @@ void main() {
     expect(controller.outOfSyncDevices, isEmpty);
   });
 
+  testWidgets('a tap is sent to a device held in landscape', (tester) async {
+    controller.setDevice(
+      1,
+      const PreviewDevice(
+        preset: DevicePresets.iPadPro13M5,
+        orientation: Orientation.landscape,
+      ),
+    );
+    await pump(tester);
+
+    await tester.tap(inDevice(0, find.text('Increment')));
+    await settle(tester);
+
+    expect(probeOf(tester, 1).count, 1);
+    expect(controller.outOfSyncDevices, isEmpty);
+  });
+
   testWidgets('an icon button is matched by its tooltip', (tester) async {
     await pump(tester);
 

@@ -87,9 +87,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.devices[1].textScale, 1.5);
 
+    await tester.tap(find.byKey(ChromeKeys.orientation(Orientation.landscape)));
+    await tester.pumpAndSettle();
+    expect(controller.devices[1].orientation, Orientation.landscape);
+    expect(probeOf(tester, 1).count, 1, reason: 'state is kept on rotation');
+
     await selectPreset(tester, DevicePresets.pixel9);
     expect(controller.devices[1].preset, DevicePresets.pixel9);
     expect(controller.devices[1].textScale, 1.5);
+    expect(controller.devices[1].orientation, Orientation.landscape);
     expect(probeOf(tester, 1).count, 1, reason: 'state is kept');
 
     await tester.tap(find.byKey(ChromeKeys.remove));

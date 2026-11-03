@@ -15,7 +15,8 @@ void main() {
   test('schemas list every parameter with its type', () {
     final schema = inputSchemaOf(command('setDevice')).toJson();
     final properties = schema['properties']! as Map<String, Object?>;
-    expect(properties.keys, ['index', 'preset', 'textScale']);
+    expect(properties.keys, ['index', 'preset', 'textScale', 'orientation']);
+    expect((properties['orientation']! as Map)['type'], 'string');
     expect((properties['index']! as Map)['type'], 'integer');
     expect((properties['textScale']! as Map)['type'], 'number');
     expect(schema['required'], ['index']);

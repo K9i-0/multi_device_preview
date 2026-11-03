@@ -551,7 +551,8 @@ class _DeviceScreenState extends State<_DeviceScreen> {
       oldWidget.bareScreen.removeListener(_updateSimulation);
       widget.bareScreen.addListener(_updateSimulation);
       _updateSimulation();
-    } else if (oldWidget.slot.device.preset != widget.slot.device.preset) {
+    } else if (oldWidget.slot.device.preset != widget.slot.device.preset ||
+        oldWidget.slot.device.orientation != widget.slot.device.orientation) {
       _updateSimulation();
     }
   }
@@ -599,7 +600,10 @@ class _DeviceScreenState extends State<_DeviceScreen> {
             foregroundPainter: _StatusBarPainter(
               time: widget.statusBarTime,
               statusBar: device.preset.systemUi?.statusBar,
-              side: sideStatusBarOf(device.preset),
+              // The side bar is drawn for the preset's own (portrait) shape.
+              side: device.orientation == Orientation.portrait
+                  ? sideStatusBarOf(device.preset)
+                  : null,
               simulation: simulation,
               overlayStyle: widget.overlayStyle,
             ),

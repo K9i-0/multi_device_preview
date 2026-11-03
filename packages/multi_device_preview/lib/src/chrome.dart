@@ -44,6 +44,10 @@ abstract final class ChromeKeys {
   static ValueKey<String> textScale(double scale) =>
       ValueKey<String>('multi_device_preview.text_scale.$scale');
 
+  /// The orientation choice [orientation] in the settings sheet.
+  static ValueKey<String> orientation(Orientation orientation) =>
+      ValueKey<String>('multi_device_preview.orientation.${orientation.name}');
+
   /// The preset choice [id] in the settings sheet.
   static ValueKey<String> preset(String id) =>
       ValueKey<String>('multi_device_preview.preset.$id');
@@ -300,7 +304,8 @@ class _DeviceLabel extends StatelessWidget {
                 Flexible(
                   child: Text(
                     '${device.preset.name} · '
-                    '${(device.textScale * 100).round()}%',
+                    '${(device.textScale * 100).round()}%'
+                    '${device.orientation == Orientation.landscape ? ' · Landscape' : ''}',
                     style: style,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -383,16 +388,32 @@ class _DeviceSheet extends StatefulWidget {
 
 class _DeviceSheetState extends State<_DeviceSheet> {
   late double _textScale = widget.device?.textScale ?? 1.0;
+  late Orientation _orientation =
+      widget.device?.orientation ?? Orientation.portrait;
 
   void _select(DevicePreset preset) {
-    widget.onChanged(PreviewDevice(preset: preset, textScale: _textScale));
+    widget.onChanged(
+      PreviewDevice(
+        preset: preset,
+        textScale: _textScale,
+        orientation: _orientation,
+      ),
+    );
   }
 
   void _selectTextScale(double scale) {
     setState(() => _textScale = scale);
     final device = widget.device;
     if (device != null) {
-      widget.onChanged(PreviewDevice(preset: device.preset, textScale: scale));
+      widget.onChanged(device.copyWith(textScale: scale));
+    }
+  }
+
+  void _selectOrientation(Orientation orientation) {
+    setState(() => _orientation = orientation);
+    final device = widget.device;
+    if (device != null) {
+      widget.onChanged(device.copyWith(orientation: orientation));
     }
   }
 
@@ -459,6 +480,29 @@ class _DeviceSheetState extends State<_DeviceSheet> {
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+          child: Text('Orientation', style: theme.textTheme.labelLarge),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final orientation in Orientation.values)
+                ChoiceChip(
+                  key: ChromeKeys.orientation(orientation),
+                  label: Text(switch (orientation) {
+                    Orientation.portrait => 'Portrait',
+                    Orientation.landscape => 'Landscape',
+                  }),
+                  selected: _orientation == orientation,
+                  onSelected: (_) => _selectOrientation(orientation),
+                ),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
         const Divider(height: 1),
         Flexible(
@@ -489,8 +533,7 @@ class _DeviceSheetState extends State<_DeviceSheet> {
                       ),
                       title: Text(preset.name),
                       subtitle: Text(
-                        '${preset.portraitSize.width.round()} × '
-                        '${preset.portraitSize.height.round()}'
+                        '${_sizeLabel(preset)}'
                         '${preset.brand == null ? '' : ' · ${preset.brand}'}',
                       ),
                       onTap: () => _select(preset),
@@ -501,6 +544,14 @@ class _DeviceSheetState extends State<_DeviceSheet> {
         ),
       ],
     );
+  }
+
+  String _sizeLabel(DevicePreset preset) {
+    final size = PreviewDevice(
+      preset: preset,
+      orientation: _orientation,
+    ).screenSize;
+    return '${size.width.round()} × ${size.height.round()}';
   }
 
   static String _kindLabel(DeviceKind kind) => switch (kind) {

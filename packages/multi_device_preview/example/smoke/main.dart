@@ -149,5 +149,18 @@ Future<void> main() async {
   }
   await shootWindow('8-duo-after');
 
+  // A store screenshot of an iPad held in landscape: 2752x2064.
+  controller.setDevice(
+    1,
+    const PreviewDevice(
+      preset: DevicePresets.iPadPro13M5,
+      orientation: Orientation.landscape,
+    ),
+  );
+  await shootWindow('9-ipad-landscape');
+  final ipad = await controller.captureScreen(1);
+  await File('$_out/10-ipad-landscape-store.png').writeAsBytes(ipad);
+  stdout.writeln('smoke: saved $_out/10-ipad-landscape-store.png');
+
   exit(0);
 }

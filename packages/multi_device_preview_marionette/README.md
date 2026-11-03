@@ -10,11 +10,11 @@ preview command becomes an MCP tool with a typed schema.
 
 | Tool | What it does |
 |---|---|
-| `multiDevicePreview.getState` | Devices (preset, text scale, size, screen key, out-of-sync) and sync state |
+| `multiDevicePreview.getState` | Devices (preset, text scale, orientation, size, screen key, out-of-sync) and sync state |
 | `multiDevicePreview.listPresets` | Preset ids |
 | `multiDevicePreview.setSync` | Turns input sync on or off |
 | `multiDevicePreview.restart` | Rebuilds every app from scratch |
-| `multiDevicePreview.setDevice` / `addDevice` / `removeDevice` | Changes the devices |
+| `multiDevicePreview.setDevice` / `addDevice` / `removeDevice` | Changes the devices; `orientation=landscape` rotates one |
 | `multiDevicePreview.saveScreenshot` | Writes a PNG of all devices, or one, to a file. `frame=false` writes a store screenshot of one device |
 | `multiDevicePreview.panZoom` | Scrolls with a trackpad gesture, mirrored like a real one |
 

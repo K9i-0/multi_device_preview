@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:device_preview/presets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/widgets.dart' show Orientation;
 
 import 'controller.dart';
 import 'presets.dart';
@@ -117,14 +118,16 @@ List<PreviewCommand> previewCommands(MultiDevicePreviewController controller) {
     PreviewCommand(
       name: 'getState',
       description:
-          'Lists the devices (index, preset, text scale, logical size, '
-          'screen key for ancestor_keys, out-of-sync mark) and whether '
+          'Lists the devices (index, preset, text scale, orientation, '
+          'logical size, screen key for ancestor_keys, out-of-sync mark) and whether '
           'input sync is on.',
       run: (_) async => _state(controller),
     ),
     PreviewCommand(
       name: 'listPresets',
-      description: 'Lists the device presets that can be used.',
+      description:
+          'Lists the device presets that can be used, with their portrait '
+          'size.',
       run: (_) async => {
         'presets': [
           for (final preset in allPresets)
@@ -170,8 +173,8 @@ List<PreviewCommand> previewCommands(MultiDevicePreviewController controller) {
     PreviewCommand(
       name: 'setDevice',
       description:
-          'Changes the preset and/or text scale of the device at index, '
-          'keeping its app state.',
+          'Changes the preset, text scale and/or orientation of the device '
+          'at index, keeping its app state.',
       params: const [
         PreviewCommandParam(
           'index',
@@ -189,15 +192,22 @@ List<PreviewCommand> previewCommands(MultiDevicePreviewController controller) {
           PreviewParamType.number,
           'The text scale factor, for example 1.5.',
         ),
+        PreviewCommandParam(
+          'orientation',
+          PreviewParamType.string,
+          'portrait or landscape. Landscape swaps the size, uses the '
+              "preset's landscape safe areas and rotates the frame.",
+        ),
       ],
       run: (args) async {
         final index = _index(controller, args, 'index')!;
         final current = controller.devices[index];
         controller.setDevice(
           index,
-          PreviewDevice(
-            preset: _preset(args) ?? current.preset,
-            textScale: _textScale(args) ?? current.textScale,
+          current.copyWith(
+            preset: _preset(args),
+            textScale: _textScale(args),
+            orientation: _orientation(args),
           ),
         );
         return _state(controller);
@@ -218,12 +228,19 @@ List<PreviewCommand> previewCommands(MultiDevicePreviewController controller) {
           PreviewParamType.number,
           'The text scale factor. Defaults to 1.',
         ),
+        PreviewCommandParam(
+          'orientation',
+          PreviewParamType.string,
+          'portrait (default) or landscape. Landscape swaps the size, uses the '
+              "preset's landscape safe areas and rotates the frame.",
+        ),
       ],
       run: (args) async {
         controller.addDevice(
           PreviewDevice(
             preset: _preset(args)!,
             textScale: _textScale(args) ?? 1.0,
+            orientation: _orientation(args) ?? Orientation.portrait,
           ),
         );
         return _state(controller);
@@ -466,6 +483,7 @@ Map<String, Object?> _state(MultiDevicePreviewController controller) {
           'preset': device.preset.id,
           'name': device.preset.name,
           'textScale': device.textScale,
+          'orientation': device.orientation.name,
           'width': device.screenSize.width,
           'height': device.screenSize.height,
           'screenKey': DeviceSlot.screenKeyOf(index).value,
@@ -543,4 +561,15 @@ double? _textScale(Map<String, String> args) {
     throw const PreviewCommandException('textScale must be positive.');
   }
   return scale;
+}
+
+Orientation? _orientation(Map<String, String> args) {
+  return switch (_string(args, 'orientation')) {
+    null => null,
+    'portrait' => Orientation.portrait,
+    'landscape' => Orientation.landscape,
+    final value => throw PreviewCommandException(
+      'orientation must be portrait or landscape: $value',
+    ),
+  };
 }

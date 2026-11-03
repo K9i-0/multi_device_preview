@@ -1,3 +1,14 @@
+## Unreleased
+
+- `PreviewDevice.orientation`: a device can be held in landscape. The screen
+  size is swapped, the preset's landscape safe areas are used and the frame
+  is rotated, as device_preview does. `captureScreen` and `saveScreenshot`
+  with `frame=false` save the landscape size (2752×2064 for the iPad Pro 13"
+  M5). The device sheet has a Portrait / Landscape choice, `setDevice` and
+  `addDevice` take an `orientation` parameter (`portrait` or `landscape`) and
+  `getState` reports each device's orientation.
+- `PreviewDevice.copyWith`.
+
 ## 1.1.0
 
 - `MultiDevicePresets` with the iPhone Duo, closed (`apple-iphone-duo`) and
