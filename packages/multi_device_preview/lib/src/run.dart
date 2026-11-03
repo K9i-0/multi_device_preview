@@ -45,6 +45,11 @@ void runMultiDevicePreview({
   bool registerServiceExtensions = true,
   String statusBarTime = '9:41',
 }) {
+  assert(
+    controller == null || identical(devices, defaultPreviewDevices),
+    'devices is ignored when a controller is given. '
+    'Pass the devices to MultiDevicePreviewController instead.',
+  );
   WidgetsFlutterBinding.ensureInitialized();
   if (kDebugMode && targetPlatform != null) {
     debugDefaultTargetPlatformOverride = targetPlatform;

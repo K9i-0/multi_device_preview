@@ -149,15 +149,16 @@ class SideStatusBar {
 /// The side status bar of [preset], or null when its status bar is the usual
 /// top one.
 @internal
-SideStatusBar? sideStatusBarOf(DevicePreset preset) =>
-    preset.id == MultiDevicePresets.iPhoneDuoOpen.id ||
-        preset.id == MultiDevicePresets.iPhoneDuo.id
-    ? _duoStatusBar
-    : null;
+SideStatusBar? sideStatusBarOf(DevicePreset preset) {
+  if (preset.id == MultiDevicePresets.iPhoneDuoOpen.id) return _duoStatusBar;
+  if (preset.id == MultiDevicePresets.iPhoneDuo.id) {
+    return _duoClosedStatusBar;
+  }
+  return null;
+}
 
 // Measured from the iOS 27.2 simulator on the open iPhone Duo: centered 48 pt
-// from the right edge, the time 34 to 45 pt from the top. The closed one has
-// the same 84 pt strip and uses the same placement.
+// from the right edge, the time 34 to 45 pt from the top.
 const SideStatusBar _duoStatusBar = SideStatusBar(
   right: 26,
   top: 32,
@@ -174,4 +175,15 @@ const SideStatusBar _duoStatusBar = SideStatusBar(
       '  <circle cx="25.49" cy="63.97" r="1.6" fill="currentColor" fill-opacity="0.2"/>\n'
       '  <circle cx="31.29" cy="61.85" r="1.6" fill="currentColor" fill-opacity="0.2"/>\n'
       '</svg>',
+);
+
+// Measured from the iOS 27.2 simulator on the outer display of the closed
+// iPhone Duo (`simctl io --display=1`): the same artwork and horizontal
+// placement as the open one, with the time 87 to 98 pt from the top.
+final SideStatusBar _duoClosedStatusBar = SideStatusBar(
+  right: _duoStatusBar.right,
+  top: _duoStatusBar.top + 52.67,
+  timeBaseline: _duoStatusBar.timeBaseline,
+  timeHeight: _duoStatusBar.timeHeight,
+  artwork: _duoStatusBar.artwork,
 );

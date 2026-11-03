@@ -11,9 +11,13 @@
 - `MultiDevicePresets.iPhoneDuo` (closed) uses the safe areas of the iOS 27.2
   simulator: right 84 and bottom 34 with no top inset in portrait, left 84
   and bottom 34 in landscape. Its status bar is drawn at the top of the right
-  strip, like the open one, instead of along the top.
+  strip, like the open one, instead of along the top, at the height measured
+  on the outer display (the time 87 pt from the top).
   `MultiDevicePresets.iPhoneDuoOpen` held in the other orientation (the inner
   display upright, 669×951) uses the simulator's top 82 and bottom 34.
+- `runMultiDevicePreview` asserts when both `devices` and `controller` are
+  given: the devices of the controller are used, so `devices` was silently
+  ignored.
 - `init --host` also links asset files listed directly in the app's root
   (for example `- shorebird.yaml`) into the host app. Only top-level
   directories were linked, so the host build could not find such files.
