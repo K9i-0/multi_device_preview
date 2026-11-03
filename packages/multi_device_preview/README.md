@@ -13,13 +13,15 @@ app normally.
 
 - Each device runs its own instance of your app, with its own state.
 - Screen size, safe areas and text scale come from `MediaQuery`, framed with
-  device_preview's artwork (iPhone, iPad, Pixel, Galaxy, foldables...).
+  device_preview's artwork (iPhone, iPad, Pixel, Galaxy, foldables...), plus
+  the iPhone Duo closed and open.
 - Taps, long presses, drags, mouse wheel and trackpad scrolls on the first
   device are sent to the others, to the *same element* even when it sits
   elsewhere on a different screen size.
 - Text typed into input fields and Enter submissions are mirrored too.
 - Switch devices and text scales, restart all apps, or turn syncing off from
   the toolbar.
+- Save App Store screenshots of each device at the exact pixel size.
 - AI agents can drive it through [Marionette](https://pub.dev/packages/marionette_flutter)
   (see [multi_device_preview_marionette](https://pub.dev/packages/multi_device_preview_marionette)).
 
@@ -96,6 +98,34 @@ Other options of `runMultiDevicePreview`:
   Android presets change the size, safe areas and frame.
 - `mouseAsTouch`: the mouse acts as a finger (default), so dragging scrolls.
 - `anchorResolvers`: see [Matching elements](#matching-elements).
+
+### Bundled presets
+
+`MultiDevicePresets` adds devices that device_preview does not have yet. They
+show up in the device sheet and in `listPresets` next to `DevicePresets`.
+
+| Preset | Id | Screen |
+|---|---|---|
+| `MultiDevicePresets.iPhoneDuo` | `apple-iphone-duo` | Closed, outer display: 466×678 pt @3x |
+| `MultiDevicePresets.iPhoneDuoOpen` | `apple-iphone-duo-open` | Open, inner display in landscape: 951×669 pt @3x |
+
+Their frames are rough outlines. The safe areas of the open state come from
+the iOS simulator; those of the closed state are approximate.
+
+### App Store screenshots
+
+`controller.captureScreen(index)` (or `saveScreenshot` with `frame=false`)
+saves the screen of one device the way the device itself takes a screenshot:
+no frame or rounded corners, at the preset's device pixel ratio, and without
+an alpha channel, which App Store Connect rejects. The simulated status bar
+and home indicator are kept. The size is the one App Store Connect asks for,
+for example 1398×2034 for the closed iPhone Duo and 2853×2007 for the open
+one.
+
+```dart
+final png = await controller.captureScreen(0);
+await File('store/iphone-duo-1.png').writeAsBytes(png);
+```
 
 ### macOS entitlements
 
@@ -218,7 +248,7 @@ Every action of the toolbar, and more, is available as a command
 | `setSync` | Turns input sync on or off |
 | `restart` | Rebuilds every app from scratch |
 | `setDevice` / `addDevice` / `removeDevice` | Changes the devices |
-| `saveScreenshot` | Writes a PNG of all devices, or one, to a file |
+| `saveScreenshot` | Writes a PNG of all devices, or one, to a file. `frame=false` writes a store screenshot of one device |
 | `panZoom` | Scrolls with a trackpad gesture, mirrored like a real one |
 
 They are registered as VM service extensions

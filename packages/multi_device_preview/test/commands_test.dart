@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:multi_device_preview/multi_device_preview.dart';
@@ -76,7 +78,21 @@ void main() {
 
   test('listPresets lists every preset', () async {
     final result = await commands['listPresets']!.run({});
-    expect(result['presets'], hasLength(DevicePresets.all.length));
+    final presets = result['presets']! as List<Object?>;
+    expect(
+      presets,
+      hasLength(DevicePresets.all.length + MultiDevicePresets.all.length),
+    );
+    final ids = [for (final p in presets) (p! as Map)['id']];
+    expect(ids, containsAll(['apple-iphone-duo', 'apple-iphone-duo-open']));
+  });
+
+  test('setDevice accepts the bundled presets', () async {
+    await commands['setDevice']!.run({
+      'index': '0',
+      'preset': 'apple-iphone-duo-open',
+    });
+    expect(controller.devices[0].preset, MultiDevicePresets.iPhoneDuoOpen);
   });
 
   test('invalid arguments are reported, not thrown as crashes', () async {
@@ -94,6 +110,20 @@ void main() {
     await expectInvalid('setDevice', {'index': '0', 'textScale': '-1'});
     await expectInvalid('addDevice', {});
     await expectInvalid('saveScreenshot', {});
+    await expectInvalid('saveScreenshot', {
+      'path': '/tmp/x.png',
+      'frame': 'no',
+    });
+    await expectInvalid('saveScreenshot', {
+      'path': '/tmp/x.png',
+      'frame': 'false',
+    });
+    await expectInvalid('saveScreenshot', {
+      'path': '/tmp/x.png',
+      'frame': 'false',
+      'device': '0',
+      'pixelRatio': '2',
+    });
 
     controller.removeDevice(1);
     await expectInvalid('removeDevice', {'index': '0'});
@@ -120,6 +150,45 @@ void main() {
     expect(result['path'], path);
     final bytes = (await tester.runAsync(() => File(path).readAsBytes()))!;
     expect(bytes.take(4), [0x89, 0x50, 0x4E, 0x47]);
+  });
+
+  testWidgets('saveScreenshot with frame=false writes the bare screen', (
+    tester,
+  ) async {
+    controller.setDevice(
+      1,
+      const PreviewDevice(preset: MultiDevicePresets.iPhoneDuo),
+    );
+    await pumpPreview(
+      tester,
+      controller: controller,
+      appBuilder: (context, slot) => const ProbeApp(),
+    );
+    final dir = await tester.runAsync(
+      () => Directory.systemTemp.createTemp('mdp'),
+    );
+    addTearDown(() => tester.runAsync(() => dir!.delete(recursive: true)));
+    final path = '${dir!.path}/duo.png';
+
+    final future = commands['saveScreenshot']!.run({
+      'path': path,
+      'device': '1',
+      'frame': 'false',
+    });
+    await completeWithRealAsync(tester, future);
+
+    final bytes = (await tester.runAsync(() => File(path).readAsBytes()))!;
+    final header = ByteData.sublistView(bytes, 16, 26);
+    expect(header.getUint32(0), 1398);
+    expect(header.getUint32(4), 2034);
+    expect(header.getUint8(9), 2, reason: 'truecolor without alpha');
+
+    // The frame is back once the capture is done.
+    await tester.pump();
+    final frames = tester.widgetList<DevicePreviewFrame>(
+      find.byType(DevicePreviewFrame),
+    );
+    expect(frames.every((f) => f.simulation.value?.frame != null), isTrue);
   });
 
   testWidgets('panZoom scrolls like a trackpad and is mirrored', (

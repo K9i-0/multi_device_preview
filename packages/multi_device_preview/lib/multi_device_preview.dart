@@ -14,6 +14,7 @@ export 'src/commands.dart'
         registerPreviewServiceExtensions;
 export 'src/controller.dart'
     show MultiDevicePreviewController, defaultPreviewDevices;
+export 'src/presets.dart' show MultiDevicePresets;
 export 'src/multi_device_preview.dart'
     show MultiDeviceAppBuilder, MultiDevicePreview;
 export 'src/preview_device.dart' show DeviceSlot, PreviewDevice;

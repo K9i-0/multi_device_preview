@@ -40,6 +40,7 @@ Flutter は `.mise.toml` で固定している。`flutter` / `dart` は mise 経
 - ホストは macOS のみ。描画は全端末 iOS 扱いで、Android のプリセットはサイズ・安全領域・外枠だけを変える。
 - 実機検証の代わりではない。ネイティブ UI・WebView・動画・ソフトウェアキーボードは対象外。
 - 外枠・機種プリセットは [device_preview](https://pub.dev/packages/device_preview) を使うが、その binding は使わない。外枠やプリセット自体の不具合は上流の問題。
+- 例外として、上流にまだない機種（iPhone Duo）は `lib/src/presets.dart` の `MultiDevicePresets` に同梱する。外枠はおおよそでよい。上流に入ったら置き換える。
 
 ## Issue・PR とリリース
 

@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'chrome.dart';
 import 'controller.dart';
 import 'layout.dart';
+import 'png.dart';
 import 'preview_device.dart';
 import 'sync/anchor.dart';
 import 'sync/input_gate.dart';
@@ -91,6 +92,8 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
   );
   final Map<int, GlobalKey> _appKeys = {};
   final Map<int, GlobalKey> _boundaryKeys = {};
+  final Map<int, GlobalKey> _screenBoundaryKeys = {};
+  final Map<int, ValueNotifier<bool>> _bareScreens = {};
   final Map<int, GlobalKey> _probeKeys = {};
   final Map<int, ValueNotifier<SystemUiOverlayStyle?>> _overlayStyles = {};
 
@@ -142,15 +145,19 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
       if (!ids.contains(id)) {
         _appKeys.remove(id);
         _boundaryKeys.remove(id);
+        _screenBoundaryKeys.remove(id);
         _probeKeys.remove(id);
         final notifier = _overlayStyles.remove(id)!;
-        SchedulerBinding.instance.addPostFrameCallback(
-          (_) => notifier.dispose(),
-        );
+        final bare = _bareScreens.remove(id)!;
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          notifier.dispose();
+          bare.dispose();
+        });
       }
     }
     for (final id in ids) {
       _overlayStyles.putIfAbsent(id, () => ValueNotifier(null));
+      _bareScreens.putIfAbsent(id, () => ValueNotifier(false));
     }
     if (_sheet case EditDeviceSheet(:final index)
         when index >= _controller.devices.length) {
@@ -237,8 +244,7 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
 
   // Screenshots ---------------------------------------------------------------
 
-  @override
-  Future<Uint8List> capture({int? device, double pixelRatio = 1.0}) async {
+  Future<void> _nextFrame() async {
     SchedulerBinding.instance.scheduleFrame();
     await SchedulerBinding.instance.endOfFrame.timeout(
       kScreenshotFrameTimeout,
@@ -248,6 +254,11 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
         kScreenshotFrameTimeout,
       ),
     );
+  }
+
+  @override
+  Future<Uint8List> capture({int? device, double pixelRatio = 1.0}) async {
+    await _nextFrame();
     final key = device == null
         ? _stageKey
         : _boundaryKeys[_controller.idAt(device)];
@@ -261,6 +272,58 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
       return bytes!.buffer.asUint8List();
     } finally {
       image.dispose();
+    }
+  }
+
+  @override
+  Future<Uint8List> captureScreen(int device) async {
+    final id = _controller.idAt(device);
+    final preset = _controller.devices[device].preset;
+    final bare = _bareScreens[id]!;
+    // Without the frame, the screen is neither clipped to its rounded outline
+    // nor cut by the camera, like a screenshot taken on the device.
+    bare.value = true;
+    final ui.Image image;
+    try {
+      await _nextFrame();
+      final boundary = _screenBoundaryKeys[id]?.currentContext
+          ?.findRenderObject();
+      if (boundary is! RenderRepaintBoundary) {
+        throw StateError('The preview is not laid out yet.');
+      }
+      image = await boundary.toImage(pixelRatio: preset.devicePixelRatio);
+    } finally {
+      if (_bareScreens[id] == bare) {
+        bare.value = false;
+      }
+    }
+    try {
+      return await _encodeOpaque(image);
+    } finally {
+      image.dispose();
+    }
+  }
+
+  // Composites [image] over black and encodes it without an alpha channel.
+  static Future<Uint8List> _encodeOpaque(ui.Image image) async {
+    final recorder = ui.PictureRecorder();
+    final bounds =
+        Offset.zero & Size(image.width.toDouble(), image.height.toDouble());
+    Canvas(recorder)
+      ..drawRect(bounds, Paint()..color = const Color(0xFF000000))
+      ..drawImage(image, Offset.zero, Paint());
+    final picture = recorder.endRecording();
+    final flat = await picture.toImage(image.width, image.height);
+    picture.dispose();
+    try {
+      final bytes = await flat.toByteData(format: ui.ImageByteFormat.rawRgba);
+      return encodeOpaquePng(
+        bytes!.buffer.asUint8List(),
+        flat.width,
+        flat.height,
+      );
+    } finally {
+      flat.dispose();
     }
   }
 
@@ -386,6 +449,8 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
       appBuilder: widget.appBuilder,
       appKey: _appKeys.putIfAbsent(id, GlobalKey.new),
       boundaryKey: _boundaryKeys.putIfAbsent(id, GlobalKey.new),
+      screenBoundaryKey: _screenBoundaryKeys.putIfAbsent(id, GlobalKey.new),
+      bareScreen: _bareScreens[id]!,
       probeKey: _probeKeys.putIfAbsent(id, GlobalKey.new),
       overlayStyle: _overlayStyles[id]!,
       gateClosed: index > 0 && _controller.syncEnabled && devices.length > 1,
@@ -402,6 +467,8 @@ class _DeviceScreen extends StatefulWidget {
     required this.appBuilder,
     required this.appKey,
     required this.boundaryKey,
+    required this.screenBoundaryKey,
+    required this.bareScreen,
     required this.probeKey,
     required this.overlayStyle,
     required this.gateClosed,
@@ -413,6 +480,8 @@ class _DeviceScreen extends StatefulWidget {
   final MultiDeviceAppBuilder appBuilder;
   final GlobalKey appKey;
   final GlobalKey boundaryKey;
+  final GlobalKey screenBoundaryKey;
+  final ValueListenable<bool> bareScreen;
   final GlobalKey probeKey;
   final ValueListenable<SystemUiOverlayStyle?> overlayStyle;
   final bool gateClosed;
@@ -424,8 +493,25 @@ class _DeviceScreen extends StatefulWidget {
 
 class _DeviceScreenState extends State<_DeviceScreen> {
   late final ValueNotifier<DeviceSimulation?> _simulation = ValueNotifier(
-    widget.slot.device.simulation,
+    _resolveSimulation(),
   );
+
+  @override
+  void initState() {
+    super.initState();
+    widget.bareScreen.addListener(_updateSimulation);
+  }
+
+  // While the screen is captured bare, the frame (and with it the screen clip)
+  // is dropped; the system UI is still painted.
+  DeviceSimulation _resolveSimulation() {
+    final simulation = widget.slot.device.simulation;
+    return widget.bareScreen.value
+        ? simulation.copyWith(frame: null)
+        : simulation;
+  }
+
+  void _updateSimulation() => _simulation.value = _resolveSimulation();
 
   Widget? _app;
   int? _appGeneration;
@@ -433,13 +519,18 @@ class _DeviceScreenState extends State<_DeviceScreen> {
   @override
   void didUpdateWidget(covariant _DeviceScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.slot.device.preset != widget.slot.device.preset) {
-      _simulation.value = widget.slot.device.simulation;
+    if (oldWidget.bareScreen != widget.bareScreen) {
+      oldWidget.bareScreen.removeListener(_updateSimulation);
+      widget.bareScreen.addListener(_updateSimulation);
+      _updateSimulation();
+    } else if (oldWidget.slot.device.preset != widget.slot.device.preset) {
+      _updateSimulation();
     }
   }
 
   @override
   void dispose() {
+    widget.bareScreen.removeListener(_updateSimulation);
     _simulation.dispose();
     super.dispose();
   }
@@ -472,42 +563,45 @@ class _DeviceScreenState extends State<_DeviceScreen> {
       key: widget.boundaryKey,
       child: Padding(
         padding: device.frameOutsets,
-        child: DevicePreviewFrame(
-          simulation: _simulation,
-          overlayStyle: widget.overlayStyle,
-          child: MediaQuery(
-            data: base.copyWith(
-              size: device.screenSize,
-              padding: simulation.padding ?? EdgeInsets.zero,
-              viewPadding:
-                  simulation.viewPadding ??
-                  simulation.padding ??
-                  EdgeInsets.zero,
-              viewInsets: EdgeInsets.zero,
-              systemGestureInsets:
-                  simulation.systemGestureInsets ?? EdgeInsets.zero,
-              textScaler: TextScaler.linear(device.textScale),
-              displayFeatures: const [],
-            ),
-            child: InputGate(
-              closed: widget.gateClosed,
-              child: Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: _handlePointer,
-                onPointerMove: _handlePointer,
-                onPointerUp: _handlePointer,
-                onPointerCancel: _handlePointer,
-                onPointerSignal: _handlePointer,
-                onPointerPanZoomStart: _handlePointer,
-                onPointerPanZoomUpdate: _handlePointer,
-                onPointerPanZoomEnd: _handlePointer,
-                child: OverlayStyleProbe(
-                  key: widget.probeKey,
-                  child: SizedBox.expand(
-                    key: widget.appKey,
-                    child: KeyedSubtree(
-                      key: widget.slot.screenKey,
-                      child: _app!,
+        child: RepaintBoundary(
+          key: widget.screenBoundaryKey,
+          child: DevicePreviewFrame(
+            simulation: _simulation,
+            overlayStyle: widget.overlayStyle,
+            child: MediaQuery(
+              data: base.copyWith(
+                size: device.screenSize,
+                padding: simulation.padding ?? EdgeInsets.zero,
+                viewPadding:
+                    simulation.viewPadding ??
+                    simulation.padding ??
+                    EdgeInsets.zero,
+                viewInsets: EdgeInsets.zero,
+                systemGestureInsets:
+                    simulation.systemGestureInsets ?? EdgeInsets.zero,
+                textScaler: TextScaler.linear(device.textScale),
+                displayFeatures: const [],
+              ),
+              child: InputGate(
+                closed: widget.gateClosed,
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: _handlePointer,
+                  onPointerMove: _handlePointer,
+                  onPointerUp: _handlePointer,
+                  onPointerCancel: _handlePointer,
+                  onPointerSignal: _handlePointer,
+                  onPointerPanZoomStart: _handlePointer,
+                  onPointerPanZoomUpdate: _handlePointer,
+                  onPointerPanZoomEnd: _handlePointer,
+                  child: OverlayStyleProbe(
+                    key: widget.probeKey,
+                    child: SizedBox.expand(
+                      key: widget.appKey,
+                      child: KeyedSubtree(
+                        key: widget.slot.screenKey,
+                        child: _app!,
+                      ),
                     ),
                   ),
                 ),

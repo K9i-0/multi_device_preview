@@ -132,5 +132,22 @@ Future<void> main() async {
   await tap(label!);
   await shootWindow('4-sheet');
 
+  // Store screenshots: the bare screens of an iPhone Duo, closed and open.
+  await tap(label!);
+  controller
+    ..syncEnabled = false
+    ..setDevice(0, const PreviewDevice(preset: MultiDevicePresets.iPhoneDuo))
+    ..setDevice(
+      1,
+      const PreviewDevice(preset: MultiDevicePresets.iPhoneDuoOpen),
+    );
+  await shootWindow('5-duo');
+  for (final (index, name) in [(0, '6-duo-store'), (1, '7-duo-open-store')]) {
+    final png = await controller.captureScreen(index);
+    await File('$_out/$name.png').writeAsBytes(png);
+    stdout.writeln('smoke: saved $_out/$name.png');
+  }
+  await shootWindow('8-duo-after');
+
   exit(0);
 }

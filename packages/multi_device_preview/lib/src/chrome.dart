@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'controller.dart';
+import 'presets.dart';
 import 'preview_device.dart';
 
 /// The height of the toolbar.
@@ -408,7 +409,7 @@ class _DeviceSheetState extends State<_DeviceSheet> {
       ])
         kind: [],
     };
-    for (final preset in DevicePresets.all) {
+    for (final preset in allPresets) {
       groups.putIfAbsent(preset.kind, () => []).add(preset);
     }
     final selected = widget.device?.preset.id;

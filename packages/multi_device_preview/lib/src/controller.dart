@@ -1,6 +1,7 @@
 import 'package:device_preview/presets.dart';
 import 'package:flutter/foundation.dart';
 
+import 'presets.dart';
 import 'preview_device.dart';
 
 /// The devices shown when no devices are given.
@@ -15,6 +16,10 @@ const List<PreviewDevice> defaultPreviewDevices = [
 abstract interface class PreviewScreenshotter {
   /// Renders the whole preview, or only the device at [device], as PNG bytes.
   Future<Uint8List> capture({int? device, double pixelRatio});
+
+  /// Renders only the screen of the device at [device], without its frame,
+  /// at its device pixel ratio, as an opaque PNG.
+  Future<Uint8List> captureScreen(int device);
 }
 
 /// Holds the configuration of a `MultiDevicePreview`: which devices are shown,
@@ -162,6 +167,25 @@ class MultiDevicePreviewController extends ChangeNotifier {
       RangeError.checkValidIndex(device, _entries, 'device');
     }
     return screenshotter.capture(device: device, pixelRatio: pixelRatio);
+  }
+
+  /// Renders only the screen of the device at [device] as PNG bytes, the way
+  /// the device itself takes a screenshot: no frame and no rounded corners,
+  /// at the preset's device pixel ratio, without an alpha channel.
+  ///
+  /// The result has the pixel size App Store Connect expects for that
+  /// device, for example 1398×2034 for [MultiDevicePresets.iPhoneDuo]. The
+  /// simulated status bar and home indicator are kept. The frame of that
+  /// device disappears for one frame while it is captured.
+  ///
+  /// Throws like [captureScreenshot].
+  Future<Uint8List> captureScreen(int device) {
+    final screenshotter = _screenshotter;
+    if (screenshotter == null) {
+      throw StateError('No MultiDevicePreview is attached to the controller.');
+    }
+    RangeError.checkValidIndex(device, _entries, 'device');
+    return screenshotter.captureScreen(device);
   }
 }
 

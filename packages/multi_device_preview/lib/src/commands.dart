@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 
 import 'controller.dart';
+import 'presets.dart';
 import 'preview_device.dart';
 import 'sync/input_gate.dart';
 
@@ -126,7 +127,7 @@ List<PreviewCommand> previewCommands(MultiDevicePreviewController controller) {
       description: 'Lists the device presets that can be used.',
       run: (_) async => {
         'presets': [
-          for (final preset in DevicePresets.all)
+          for (final preset in allPresets)
             {
               'id': preset.id,
               'name': preset.name,
@@ -254,9 +255,12 @@ List<PreviewCommand> previewCommands(MultiDevicePreviewController controller) {
       name: 'saveScreenshot',
       description:
           'Saves a PNG of all devices (or one device, with its frame) to '
-          'path. Smaller than the screenshots returned over MCP. Fails when '
-          'the window is hidden behind other windows, where macOS stops '
-          'rendering it.',
+          'path. Smaller than the screenshots returned over MCP. With '
+          'frame=false, saves only the screen of one device like an App '
+          'Store screenshot: no frame, at the device pixel ratio (for '
+          'example 1398x2034 for apple-iphone-duo), no alpha channel, with '
+          'the simulated status bar. Fails when the window is hidden behind '
+          'other windows, where macOS stops rendering it.',
       params: const [
         PreviewCommandParam(
           'path',
@@ -272,20 +276,42 @@ List<PreviewCommand> previewCommands(MultiDevicePreviewController controller) {
         PreviewCommandParam(
           'pixelRatio',
           PreviewParamType.number,
-          'Output pixels per logical pixel. Defaults to 1.',
+          'Output pixels per logical pixel. Defaults to 1. Not used with '
+              'frame=false.',
+        ),
+        PreviewCommandParam(
+          'frame',
+          PreviewParamType.boolean,
+          'Whether to include the device frame. Defaults to true. false '
+              'needs device.',
         ),
       ],
       run: (args) async {
         final path = _string(args, 'path')!;
         final device = _index(controller, args, 'device');
-        final pixelRatio = _double(args, 'pixelRatio') ?? 1.0;
-        if (pixelRatio <= 0) {
-          throw const PreviewCommandException('pixelRatio must be positive.');
+        final pixelRatio = _double(args, 'pixelRatio');
+        final frame = _bool(args, 'frame') ?? true;
+        final Uint8List png;
+        if (frame) {
+          if (pixelRatio != null && pixelRatio <= 0) {
+            throw const PreviewCommandException('pixelRatio must be positive.');
+          }
+          png = await controller.captureScreenshot(
+            device: device,
+            pixelRatio: pixelRatio ?? 1.0,
+          );
+        } else {
+          if (device == null) {
+            throw const PreviewCommandException('frame=false needs device.');
+          }
+          if (pixelRatio != null) {
+            throw const PreviewCommandException(
+              'pixelRatio cannot be used with frame=false; the device pixel '
+              'ratio is used.',
+            );
+          }
+          png = await controller.captureScreen(device);
         }
-        final png = await controller.captureScreenshot(
-          device: device,
-          pixelRatio: pixelRatio,
-        );
         final file = File(path);
         await file.parent.create(recursive: true);
         await file.writeAsBytes(png);
@@ -503,7 +529,7 @@ DevicePreset? _preset(Map<String, String> args) {
   if (id == null) {
     return null;
   }
-  for (final preset in DevicePresets.all) {
+  for (final preset in allPresets) {
     if (preset.id == id) {
       return preset;
     }
