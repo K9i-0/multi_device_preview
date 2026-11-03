@@ -5,7 +5,7 @@ description: multi_device_preview / multi_device_preview_marionette を pub.dev 
 
 # pub.dev リリース
 
-パッケージごとのタグを push すると `.github/workflows/publish.yml` が検証と pub.dev への publish（GitHub OIDC）を行う。
+パッケージごとのタグを push すると `.github/workflows/publish.yml` がタグと main の関係を確認し、通常検証と macOS Patrol E2E がすべて成功した後に pub.dev への publish（GitHub OIDC）を行う。
 
 ```text
 /release                         # 差分のあるパッケージを判定してリリース
@@ -87,13 +87,13 @@ git log --oneline "$base"..HEAD -- $dir
 
 ## 5. ローカル検証
 
-publish.yml と同じ検証を行う。すべて通らなければタグを打たない。
+publish.yml と同じ検証を行う。macOS Patrol の全ケース成功を必須にし、失敗・skip・起動だけの成功を合格としない。両パッケージのリリースに同じ回帰スイートを使う。すべて通らなければタグを打たない。
 
 ```bash
 mise run setup
 mise run check
 mise run publish-check
-(cd packages/multi_device_preview/example && flutter build macos --debug)
+mise run e2e
 ```
 
 `publish-check` の警告（`Package has 0 warnings` 以外）は内容を確認し、今回の変更に起因するものは直す。
@@ -123,6 +123,6 @@ pub.dev の `latest.version` が新しいバージョンになれば完了。パ
 ### 失敗したとき
 
 - **バージョン・CHANGELOG の不一致**（`Resolve the package from the tag` で失敗）: 修正をコミット・push し、タグを付け直す（`git push origin :refs/tags/<tag>` → `git tag -f <tag>` → `git push origin <tag>`）。pub.dev にまだ公開されていないことを確認してから行う。
-- **check / build の失敗**: 原因を直してから同様にタグを付け直す。
+- **check / Patrol E2E の失敗**: 原因を直してから同様にタグを付け直す。
 - **Publish ステップの認証エラー**: pub.dev 側の設定（パッケージの Admin で verified publisher `k9i.app` への移管と、Automated publishing をリポジトリ `K9i-0/multi_device_preview`・タグパターン `<pkg>-v{{version}}` で有効化）が未完了の可能性が高い。ユーザーに必要な設定を伝え、設定後に `gh run rerun <run-id>` する。手動 publish で代替しない。
 - 一度 pub.dev に公開されたバージョンは取り消せない。公開後に問題が見つかったら次の patch で直す。

@@ -24,16 +24,18 @@ Flutter は `.mise.toml` で固定している。`flutter` / `dart` は mise 経
 | コマンド | 内容 | 使う場面 |
 | --- | --- | --- |
 | `mise run setup` | workspace 全体の `flutter pub get` | 依存変更後・初回 |
-| `mise run format` | `dart format packages` | コミット前 |
+| `mise run format` | Git 管理対象と未追跡の非 ignore Dart ファイルを整形 | コミット前 |
 | `mise run check` | format-check・`dart analyze --fatal-infos`・全パッケージのテスト | Dart の変更すべて |
 | `mise run publish-check` | 両パッケージの `flutter pub publish --dry-run` | pubspec・公開ファイル・README の変更、リリース前 |
 | `mise run smoke` | example を macOS で動かし、アプリ内で撮ったスクリーンショットを `tmp/smoke/` に保存 | 表示・同期の挙動の変更 |
+| `mise run e2e` | macOS Patrol 回帰テスト（必須リリースゲート） | リリース前・回帰確認 |
 | `mise run example` | example を macOS で起動 | 手動確認 |
 
 - 文書だけの変更は参照・リンク・形式を確認すればよい。
 - 表示・入力同期を変えたら `mise run smoke` の画像を見て確認する。ディスプレイがスリープ中は `screencapture` が黒くなるので、外部からの撮影ではなく smoke を使う。
 - Marionette 経由の操作は `packages/multi_device_preview/example/marionette/` のエントリで起動して確かめる。
-- CI（`.github/workflows/ci.yml`）は `check`・`publish-check` と example の `flutter build macos --debug` を実行する。
+- CI（`.github/workflows/ci.yml`）は `check`・`publish-check` と macOS Patrol E2E を実行する。タグ公開も同じ CI を必須にし、E2E 成功後だけ publish する。
+- 保存した回帰スイートは `packages/multi_device_preview/example/patrol_test/`。手動の smoke や Marionette 操作を release gate の代用にしない。[Patrol 手順](docs/patrol.md) を参照。Patrol MCP 安定版は macOS develop 未対応のため、ここでは CLI を使う。
 
 ## 対象範囲
 

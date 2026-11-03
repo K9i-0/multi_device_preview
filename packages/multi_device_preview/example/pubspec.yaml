@@ -20,6 +20,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  patrol: 4.11.0
+  patrol_cli: 4.9.0
+
+patrol:
+  app_name: multi_device_preview_example
+  macos:
+    bundle_id: com.example.multiDevicePreviewExample
 
 flutter:
   uses-material-design: true

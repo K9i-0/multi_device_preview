@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'example_keys.dart';
+
 /// A small shop-like app with tabs, a list, a search field, a detail page and
 /// a dialog, to look at layouts and try input mirroring across devices.
 class ExampleApp extends StatelessWidget {
@@ -54,12 +56,17 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Coffee stand'),
         actions: [
           IconButton(
+            key: ExampleKeys.cart,
             tooltip: 'Cart',
             onPressed: () => showDialog<void>(
               context: context,
               builder: (context) => AlertDialog(
+                key: ExampleKeys.cartDialog,
                 title: const Text('Cart'),
-                content: Text('$_cart items in your cart.'),
+                content: Text(
+                  '$_cart items in your cart.',
+                  key: ExampleKeys.cartCount,
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -80,13 +87,13 @@ class _HomePageState extends State<HomePage> {
         index: _tab,
         children: [
           ListView(
-            key: const ValueKey('menu'),
+            key: ExampleKeys.menu,
             padding: const EdgeInsets.only(bottom: 88),
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: TextField(
-                  key: const ValueKey('search'),
+                  key: ExampleKeys.search,
                   textInputAction: TextInputAction.search,
                   decoration: const InputDecoration(
                     labelText: 'Search the menu',
@@ -102,10 +109,12 @@ class _HomePageState extends State<HomePage> {
               ),
               for (final product in products)
                 ListTile(
+                  key: ExampleKeys.product(product),
                   leading: CircleAvatar(child: Text(product[0])),
                   title: Text(product),
                   subtitle: const Text('Freshly made · ¥480'),
                   trailing: IconButton(
+                    key: ExampleKeys.addProduct(product),
                     tooltip: 'Add $product',
                     icon: const Icon(Icons.add_circle_outline),
                     onPressed: () => setState(() => _cart++),
@@ -124,7 +133,9 @@ class _HomePageState extends State<HomePage> {
                 ),
             ],
           ),
-          const Center(child: Text('No orders yet')),
+          const Center(
+            child: Text('No orders yet', key: ExampleKeys.ordersEmpty),
+          ),
           const Center(child: Text('Signed in as guest')),
         ],
       ),
@@ -134,6 +145,7 @@ class _HomePageState extends State<HomePage> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.local_cafe), label: 'Menu'),
           NavigationDestination(
+            key: ExampleKeys.ordersTab,
             icon: Icon(Icons.receipt_long),
             label: 'Orders',
           ),

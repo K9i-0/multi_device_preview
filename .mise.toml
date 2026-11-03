@@ -7,11 +7,11 @@ run = "flutter pub get"
 
 [tasks.format]
 description = "Format Dart sources"
-run = "dart format packages"
+run = "git ls-files --cached --others --exclude-standard -z -- '*.dart' | xargs -0 dart format"
 
 [tasks.format-check]
 description = "Check Dart formatting without modifying files"
-run = "dart format --output=none --set-exit-if-changed packages"
+run = "git ls-files --cached --others --exclude-standard -z -- '*.dart' | xargs -0 dart format --output=none --set-exit-if-changed"
 
 [tasks.analyze]
 description = "Run static analysis on every workspace package"
@@ -45,3 +45,8 @@ run = "flutter run -d macos"
 [tasks.check]
 description = "Run all local quality checks"
 depends = ["format-check", "analyze", "test"]
+
+[tasks.e2e]
+description = "Run the required Patrol regression suite on macOS"
+dir = "packages/multi_device_preview/example"
+run = "python3 ../../../tool/run_patrol.py --device macos"

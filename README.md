@@ -93,3 +93,11 @@ and enable *Automated
 publishing* from GitHub Actions with repository `K9i-0/multi_device_preview`
 and tag pattern `multi_device_preview-v{{version}}` (or
 `multi_device_preview_marionette-v{{version}}`).
+
+### Release regression gate
+
+Run `mise run e2e` before a release. The macOS Patrol suite verifies preview
+interactions and synchronization, and must pass with no failures or skipped tests.
+The package-tag workflow repeats the same CI and E2E checks before publishing.
+See [Patrol regression checks](docs/patrol.md) and the
+[release procedure](.claude/skills/release/SKILL.md).

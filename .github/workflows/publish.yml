@@ -1,11 +1,6 @@
 name: Publish
 
-# Publishes a package to pub.dev when its release tag is pushed:
-#   multi_device_preview-v<version>
-#   multi_device_preview_marionette-v<version>
-# Authenticates with GitHub OIDC (pub.dev automated publishing), so no
-# secrets are stored. Enable it on each package's admin page on pub.dev with
-# the tag pattern above.
+# A main push only validates. Publication requires an explicit release tag.
 on:
   push:
     tags:
@@ -14,55 +9,45 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  publish:
-    runs-on: macos-15
+  validate-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      dir: ${{ steps.package.outputs.dir }}
     steps:
-      - uses: actions/checkout@v5
-
-      - name: Resolve the package from the tag
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Validate package, version, changelog, and main ancestry
         id: package
         env:
           TAG: ${{ github.ref_name }}
-        run: |
-          package="${TAG%-v*}"
-          version="${TAG##*-v}"
-          dir="packages/$package"
-          if [ ! -f "$dir/pubspec.yaml" ]; then
-            echo "::error::No package for tag $TAG"
-            exit 1
-          fi
-          actual="$(sed -n 's/^version: *//p' "$dir/pubspec.yaml")"
-          if [ "$actual" != "$version" ]; then
-            echo "::error::Tag version $version does not match $dir/pubspec.yaml ($actual)"
-            exit 1
-          fi
-          if ! grep -q "^## $version\$" "$dir/CHANGELOG.md"; then
-            echo "::error::$dir/CHANGELOG.md has no section for $version"
-            exit 1
-          fi
-          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+        run: python3 tool/validate_release.py
 
-      # Sets up the OIDC token exchange with pub.dev. Flutter (from mise)
-      # comes after it, so its dart and flutter are the ones on PATH.
-      - uses: dart-lang/setup-dart@v1
-      - uses: jdx/mise-action@v5
+  checks:
+    needs: validate-tag
+    uses: ./.github/workflows/ci.yml
 
+  publish:
+    needs: [validate-tag, checks]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # OIDC credentials are only requested after all required checks passed.
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
       - run: mise run setup
-      - run: mise run check
-      - run: flutter build macos --debug
-        working-directory: packages/multi_device_preview/example
-
-      - name: Validate
-        working-directory: ${{ steps.package.outputs.dir }}
+      - name: Validate the selected package
+        working-directory: ${{ needs.validate-tag.outputs.dir }}
         run: flutter pub publish --dry-run
-
-      - name: Publish
-        working-directory: ${{ steps.package.outputs.dir }}
+      - name: Publish to pub.dev
+        working-directory: ${{ needs.validate-tag.outputs.dir }}
         run: flutter pub publish --force
