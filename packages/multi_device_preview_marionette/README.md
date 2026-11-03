@@ -11,7 +11,7 @@ preview command becomes an MCP tool with a typed schema.
 | `multiDevicePreview.setSync` | Turns input sync on or off |
 | `multiDevicePreview.restart` | Rebuilds every app from scratch |
 | `multiDevicePreview.setDevice` / `addDevice` / `removeDevice` | Changes the devices |
-| `multiDevicePreview.saveScreenshot` | Writes a PNG of all devices, or one, to a file |
+| `multiDevicePreview.saveScreenshot` | Writes a PNG of all devices, or one, to a file. `frame=false` writes a store screenshot of one device |
 | `multiDevicePreview.panZoom` | Scrolls with a trackpad gesture, mirrored like a real one |
 
 ## Setup
