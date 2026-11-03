@@ -110,7 +110,9 @@ show up in the device sheet and in `listPresets` next to `DevicePresets`.
 | `MultiDevicePresets.iPhoneDuoOpen` | `apple-iphone-duo-open` | Open, inner display in landscape: 951×669 pt @3x |
 
 Their frames are rough outlines. The safe areas of the open state come from
-the iOS simulator; those of the closed state are approximate.
+the iOS simulator; those of the closed state are approximate. Like the
+simulator, the open state draws its status bar (time, Wi-Fi) in the right
+safe area.
 
 ### App Store screenshots
 

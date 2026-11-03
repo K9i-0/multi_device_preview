@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:device_preview/device_preview.dart';
+import 'package:device_preview/svg.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -13,6 +14,7 @@ import 'chrome.dart';
 import 'controller.dart';
 import 'layout.dart';
 import 'png.dart';
+import 'presets.dart';
 import 'preview_device.dart';
 import 'sync/anchor.dart';
 import 'sync/input_gate.dart';
@@ -568,39 +570,50 @@ class _DeviceScreenState extends State<_DeviceScreen> {
           child: DevicePreviewFrame(
             simulation: _simulation,
             overlayStyle: widget.overlayStyle,
-            child: MediaQuery(
-              data: base.copyWith(
-                size: device.screenSize,
-                padding: simulation.padding ?? EdgeInsets.zero,
-                viewPadding:
-                    simulation.viewPadding ??
-                    simulation.padding ??
-                    EdgeInsets.zero,
-                viewInsets: EdgeInsets.zero,
-                systemGestureInsets:
-                    simulation.systemGestureInsets ?? EdgeInsets.zero,
-                textScaler: TextScaler.linear(device.textScale),
-                displayFeatures: const [],
+            // Always present, so switching presets keeps the app's element
+            // tree (and state); it paints nothing for most devices.
+            child: CustomPaint(
+              foregroundPainter: _SideStatusBarPainter(
+                bar: simulation.showSystemUi
+                    ? sideStatusBarOf(device.preset)
+                    : null,
+                overlayStyle: widget.overlayStyle,
+                platformBrightness: simulation.platformBrightness,
               ),
-              child: InputGate(
-                closed: widget.gateClosed,
-                child: Listener(
-                  behavior: HitTestBehavior.translucent,
-                  onPointerDown: _handlePointer,
-                  onPointerMove: _handlePointer,
-                  onPointerUp: _handlePointer,
-                  onPointerCancel: _handlePointer,
-                  onPointerSignal: _handlePointer,
-                  onPointerPanZoomStart: _handlePointer,
-                  onPointerPanZoomUpdate: _handlePointer,
-                  onPointerPanZoomEnd: _handlePointer,
-                  child: OverlayStyleProbe(
-                    key: widget.probeKey,
-                    child: SizedBox.expand(
-                      key: widget.appKey,
-                      child: KeyedSubtree(
-                        key: widget.slot.screenKey,
-                        child: _app!,
+              child: MediaQuery(
+                data: base.copyWith(
+                  size: device.screenSize,
+                  padding: simulation.padding ?? EdgeInsets.zero,
+                  viewPadding:
+                      simulation.viewPadding ??
+                      simulation.padding ??
+                      EdgeInsets.zero,
+                  viewInsets: EdgeInsets.zero,
+                  systemGestureInsets:
+                      simulation.systemGestureInsets ?? EdgeInsets.zero,
+                  textScaler: TextScaler.linear(device.textScale),
+                  displayFeatures: const [],
+                ),
+                child: InputGate(
+                  closed: widget.gateClosed,
+                  child: Listener(
+                    behavior: HitTestBehavior.translucent,
+                    onPointerDown: _handlePointer,
+                    onPointerMove: _handlePointer,
+                    onPointerUp: _handlePointer,
+                    onPointerCancel: _handlePointer,
+                    onPointerSignal: _handlePointer,
+                    onPointerPanZoomStart: _handlePointer,
+                    onPointerPanZoomUpdate: _handlePointer,
+                    onPointerPanZoomEnd: _handlePointer,
+                    child: OverlayStyleProbe(
+                      key: widget.probeKey,
+                      child: SizedBox.expand(
+                        key: widget.appKey,
+                        child: KeyedSubtree(
+                          key: widget.slot.screenKey,
+                          child: _app!,
+                        ),
                       ),
                     ),
                   ),
@@ -667,4 +680,55 @@ class RenderOverlayStyleProbe extends RenderProxyBox {
           bottom.systemNavigationBarContrastEnforced,
     );
   }
+}
+
+/// Paints a [SideStatusBar] over the app, tinted like the simulated status
+/// bar.
+class _SideStatusBarPainter extends CustomPainter {
+  _SideStatusBarPainter({
+    required this.bar,
+    required this.overlayStyle,
+    required this.platformBrightness,
+  }) : super(repaint: overlayStyle);
+
+  final SideStatusBar? bar;
+  final ValueListenable<SystemUiOverlayStyle?> overlayStyle;
+  final Brightness? platformBrightness;
+
+  static final Map<String, SvgDrawing> _drawings = {};
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bar = this.bar;
+    if (bar == null) {
+      return;
+    }
+    final drawing = _drawings.putIfAbsent(
+      bar.artwork,
+      () => SvgDrawing.parse(bar.artwork),
+    );
+    final colors = SystemUiColors.resolve(
+      style: overlayStyle.value,
+      platformBrightness:
+          platformBrightness ??
+          ui.PlatformDispatcher.instance.platformBrightness,
+      platform: TargetPlatform.iOS,
+    );
+    drawing.paintInto(
+      canvas,
+      Rect.fromLTWH(
+        size.width - bar.right - drawing.size.width,
+        bar.top,
+        drawing.size.width,
+        drawing.size.height,
+      ),
+      currentColor: colors.statusBarIcons,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SideStatusBarPainter oldDelegate) =>
+      oldDelegate.bar != bar ||
+      oldDelegate.overlayStyle != overlayStyle ||
+      oldDelegate.platformBrightness != platformBrightness;
 }

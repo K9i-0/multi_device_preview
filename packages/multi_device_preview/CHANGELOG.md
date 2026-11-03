@@ -2,7 +2,8 @@
 
 - `MultiDevicePresets` with the iPhone Duo, closed (`apple-iphone-duo`) and
   open (`apple-iphone-duo-open`). They are offered in the device sheet,
-  `listPresets` and `setDevice` / `addDevice`.
+  `listPresets` and `setDevice` / `addDevice`. The open one draws its status
+  bar in the right safe area, as the iOS simulator does.
 - `MultiDevicePreviewController.captureScreen` and `saveScreenshot` with
   `frame=false` save one device's screen for App Store Connect: no frame, at
   the device pixel ratio, without an alpha channel.
