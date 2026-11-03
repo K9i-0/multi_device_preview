@@ -1,4 +1,4 @@
-## Unreleased
+## 1.1.0
 
 - `MultiDevicePresets` with the iPhone Duo, closed (`apple-iphone-duo`) and
   open (`apple-iphone-duo-open`). They are offered in the device sheet,
