@@ -1,4 +1,4 @@
-## Unreleased
+## 1.2.0
 
 - `PreviewDevice.orientation`: a device can be held in landscape. The screen
   size is swapped, the preset's landscape safe areas are used and the frame

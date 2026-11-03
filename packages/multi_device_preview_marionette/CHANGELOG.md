@@ -1,7 +1,7 @@
-## Unreleased
+## 1.1.0
 
-- The `setDevice` and `addDevice` tools take the `orientation` parameter of
-  the next multi_device_preview release, and `getState` reports it.
+- Requires multi_device_preview 1.2.0. The `setDevice` and `addDevice` tools
+  take its new `orientation` parameter, and `getState` reports it.
 
 ## 1.0.0
 
