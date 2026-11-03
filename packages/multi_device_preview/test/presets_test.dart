@@ -35,6 +35,13 @@ void main() {
       preset.resolve(orientation: Orientation.landscape).padding,
       const EdgeInsets.only(left: 84, bottom: 34),
     );
+    // The open one rotated is the upright inner display, without a strip.
+    expect(
+      MultiDevicePresets.iPhoneDuoOpen
+          .resolve(orientation: Orientation.landscape)
+          .padding,
+      const EdgeInsets.only(top: 82, bottom: 34),
+    );
   });
 
   testWidgets('the status bar time replaces the preset artwork', (

@@ -75,6 +75,8 @@ abstract final class MultiDevicePresets {
     portraitSize: ui.Size(951, 669),
     devicePixelRatio: 3.0,
     portraitPadding: EdgeInsets.only(right: 84, bottom: 34),
+    // Rotated, it is the inner display held upright: no strip.
+    landscapePadding: EdgeInsets.only(top: 82, bottom: 34),
     kind: DeviceKind.foldable,
     frame: DeviceFrame(
       size: ui.Size(985, 703),

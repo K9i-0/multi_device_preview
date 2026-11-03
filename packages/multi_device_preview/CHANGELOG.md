@@ -12,6 +12,8 @@
   simulator: right 84 and bottom 34 with no top inset in portrait, left 84
   and bottom 34 in landscape. Its status bar is drawn at the top of the right
   strip, like the open one, instead of along the top.
+  `MultiDevicePresets.iPhoneDuoOpen` held in the other orientation (the inner
+  display upright, 669×951) uses the simulator's top 82 and bottom 34.
 - `init --host` also links asset files listed directly in the app's root
   (for example `- shorebird.yaml`) into the host app. Only top-level
   directories were linked, so the host build could not find such files.
