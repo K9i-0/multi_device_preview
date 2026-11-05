@@ -32,4 +32,8 @@ abstract interface class SyncHost {
 
   /// Records that [device] missed a mirrored gesture.
   void markOutOfSync(int device);
+
+  /// Gives the keyboard focus back to the source device, to the node it
+  /// focused last.
+  void focusSource();
 }

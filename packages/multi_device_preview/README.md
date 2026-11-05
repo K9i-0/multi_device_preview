@@ -176,7 +176,8 @@ While **Sync input** is on, the first (leftmost) device is the input source:
   screen. Enter submits on every device for `done`, `go`, `search` and `send`
   actions (`next` is not sent, it would move focus). Enter confirming an IME
   conversion does not submit.
-- Focus stays on the first device, so the keyboard keeps typing there.
+- Keyboard focus stays on the first device, so typing and keyboard shortcuts
+  (for example a debug menu on Shift+D) go there.
 - Hover is not mirrored.
 
 A **tap that cannot be matched precisely is not sent**: on a screen of another

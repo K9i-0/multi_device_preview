@@ -103,6 +103,7 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
   final Map<int, ValueNotifier<bool>> _bareScreens = {};
   final Map<int, GlobalKey> _probeKeys = {};
   final Map<int, ValueNotifier<SystemUiOverlayStyle?>> _overlayStyles = {};
+  final Map<int, FocusScopeNode> _focusScopes = {};
 
   ChromeSheet? _sheet;
   bool _styleLoopScheduled = false;
@@ -111,6 +112,7 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
   void initState() {
     super.initState();
     PlatformInput.ensureInstalled(WidgetsBinding.instance.platformDispatcher);
+    FocusManager.instance.addListener(_keepFocusOnSource);
     _attach(widget.controller ?? (_ownController = _createController()));
     _scheduleStyleUpdate();
   }
@@ -156,15 +158,21 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
         _probeKeys.remove(id);
         final notifier = _overlayStyles.remove(id)!;
         final bare = _bareScreens.remove(id)!;
+        final scope = _focusScopes.remove(id);
         SchedulerBinding.instance.addPostFrameCallback((_) {
           notifier.dispose();
           bare.dispose();
+          scope?.dispose();
         });
       }
     }
     for (final id in ids) {
       _overlayStyles.putIfAbsent(id, () => ValueNotifier(null));
       _bareScreens.putIfAbsent(id, () => ValueNotifier(false));
+      _focusScopes.putIfAbsent(
+        id,
+        () => FocusScopeNode(debugLabel: 'multi_device_preview.device'),
+      );
     }
     if (_sheet case EditDeviceSheet(:final index)
         when index >= _controller.devices.length) {
@@ -172,17 +180,26 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
     }
     if (mounted) {
       setState(() {});
+      // The source may have changed (a device moved to index 0, syncing was
+      // turned on).
+      SchedulerBinding.instance.addPostFrameCallback(
+        (_) => _keepFocusOnSource(),
+      );
     }
   }
 
   @override
   void dispose() {
+    FocusManager.instance.removeListener(_keepFocusOnSource);
     _detach();
     _ownController?.dispose();
     _mirror.dispose();
     _textSync.dispose();
     for (final notifier in _overlayStyles.values) {
       notifier.dispose();
+    }
+    for (final scope in _focusScopes.values) {
+      scope.dispose();
     }
     super.dispose();
   }
@@ -248,6 +265,48 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
 
   @override
   void markOutOfSync(int device) => _controller.markOutOfSync(device);
+
+  @override
+  void focusSource() {
+    final source = _focusScopes[_controller.idAt(0)];
+    if (source != null && source.context != null) {
+      // A scope passes the focus on to the node it focused last.
+      source.requestFocus();
+    }
+  }
+
+  // Keyboard focus -------------------------------------------------------------
+
+  /// Keeps the keyboard focus on the source device while input is mirrored,
+  /// so keyboard shortcuts and typing reach it.
+  ///
+  /// Every app focuses its first route when it starts, so without this the
+  /// focus ends up on whichever device started last. Focus also lands on
+  /// another device when a mirrored tap focuses something there, or falls
+  /// out of the devices when it is dropped. The tool's own controls keep the
+  /// focus they take.
+  void _keepFocusOnSource() {
+    if (!mounted || !_controller.syncEnabled || deviceCount < 2) {
+      return;
+    }
+    final focus = FocusManager.instance.primaryFocus;
+    final source = _focusScopes[_controller.idAt(0)];
+    if (focus == null || source == null || source.context == null) {
+      return;
+    }
+    bool within(FocusScopeNode scope) =>
+        identical(focus, scope) || focus.ancestors.contains(scope);
+    if (within(source)) {
+      return;
+    }
+    final onOtherDevice = _focusScopes.values.any(
+      (scope) => !identical(scope, source) && within(scope),
+    );
+    final fellOut = source.ancestors.contains(focus);
+    if (onOtherDevice || fellOut) {
+      focusSource();
+    }
+  }
 
   // Screenshots ---------------------------------------------------------------
 
@@ -461,6 +520,7 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
       statusBarTime: widget.statusBarTime,
       probeKey: _probeKeys.putIfAbsent(id, GlobalKey.new),
       overlayStyle: _overlayStyles[id]!,
+      focusScope: _focusScopes[id]!,
       gateClosed: index > 0 && _controller.syncEnabled && devices.length > 1,
       onPointerEvent: _mirror.handleSourceEvent,
     );
@@ -480,6 +540,7 @@ class _DeviceScreen extends StatefulWidget {
     required this.statusBarTime,
     required this.probeKey,
     required this.overlayStyle,
+    required this.focusScope,
     required this.gateClosed,
     required this.onPointerEvent,
   });
@@ -494,6 +555,7 @@ class _DeviceScreen extends StatefulWidget {
   final String statusBarTime;
   final GlobalKey probeKey;
   final ValueListenable<SystemUiOverlayStyle?> overlayStyle;
+  final FocusScopeNode focusScope;
   final bool gateClosed;
   final ValueChanged<PointerEvent> onPointerEvent;
 
@@ -638,11 +700,14 @@ class _DeviceScreenState extends State<_DeviceScreen> {
                     onPointerPanZoomEnd: _handlePointer,
                     child: OverlayStyleProbe(
                       key: widget.probeKey,
-                      child: SizedBox.expand(
-                        key: widget.appKey,
-                        child: KeyedSubtree(
-                          key: widget.slot.screenKey,
-                          child: _app!,
+                      child: FocusScope(
+                        node: widget.focusScope,
+                        child: SizedBox.expand(
+                          key: widget.appKey,
+                          child: KeyedSubtree(
+                            key: widget.slot.screenKey,
+                            child: _app!,
+                          ),
                         ),
                       ),
                     ),

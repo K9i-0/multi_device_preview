@@ -229,7 +229,7 @@ class InputMirror {
         host.deviceOf(sourceContext) == 0) {
       sourceFocus.requestFocus();
     } else {
-      current.unfocus();
+      host.focusSource();
     }
   }
 
