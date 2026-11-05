@@ -93,6 +93,15 @@ void main() {
 }
 ```
 
+`init` writes this entry point from `runApp` in `lib/main.dart`. It looks
+through widgets wrapping the app as `child:` (for example
+`ProviderScope(overrides: ..., child: TranslationProvider(child: MyApp()))`),
+builds a `ProviderScope` in `appBuilder` and lists the other wrappers in a
+comment; give them what `main()` gives them. The generated entry point passes
+the devices to a `MultiDevicePreviewController`, which is also what
+[multi_device_preview_marionette](https://pub.dev/packages/multi_device_preview_marionette)
+needs.
+
 A device can be held in landscape with
 `PreviewDevice(preset: ..., orientation: Orientation.landscape)`, or from the
 Orientation choice in its device sheet. The screen size is swapped, the
@@ -102,7 +111,9 @@ turn, as device_preview does.
 Other options of `runMultiDevicePreview`:
 
 - `controller`: a `MultiDevicePreviewController` to change devices, toggle
-  sync, restart or capture screenshots from code.
+  sync, restart or capture screenshots from code. Give the devices to the
+  controller (`MultiDevicePreviewController(devices: ...)`); `devices` cannot
+  be passed with it.
 - `wrapper`: wraps the whole preview, for things that must exist only once
   above all devices (for example slang's `TranslationProvider`).
 - `targetPlatform`: every device renders as iOS by default (debug mode only).

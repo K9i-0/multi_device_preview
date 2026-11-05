@@ -25,7 +25,9 @@ flutter pub add dev:multi_device_preview_marionette dev:marionette_flutter
 ```
 
 In the preview entry point, initialize Marionette **before**
-`runMultiDevicePreview`:
+`runMultiDevicePreview` (and before any other binding, for example before
+`WidgetsFlutterBinding.ensureInitialized()` when `main()` awaits something
+first). Pass the devices to the controller, not to `runMultiDevicePreview`:
 
 ```dart
 import 'package:flutter/foundation.dart';
@@ -34,7 +36,12 @@ import 'package:multi_device_preview/multi_device_preview.dart';
 import 'package:multi_device_preview_marionette/multi_device_preview_marionette.dart';
 
 void main() {
-  final controller = MultiDevicePreviewController();
+  final controller = MultiDevicePreviewController(
+    devices: const [
+      PreviewDevice(preset: DevicePresets.iPhone17),
+      PreviewDevice(preset: DevicePresets.pixel9),
+    ],
+  );
   if (!kReleaseMode) {
     MarionetteBinding.ensureInitialized(
       multiDevicePreviewMarionetteConfiguration,
