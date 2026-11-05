@@ -230,6 +230,142 @@ void main() {
     expect(pubspec['dependencies']['shop'], {'path': '../../app'});
   });
 
+  test('looks through the widgets wrapping the root widget', () {
+    _createApp();
+    _write('app/lib/main.dart', """
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shop/i18n.dart';
+
+class ShopApp extends StatelessWidget {
+  const ShopApp({super.key});
+}
+
+Future<void> main() async {
+  final overrides = await initialize();
+  runApp(
+    ProviderScope(
+      overrides: [...overrides, foo(bar: (a, b) => a)],
+      retry: (_, _) => null,
+      child: TranslationProvider(child: const ShopApp()),
+    ),
+  );
+}
+""");
+    final widget = findRootWidget(p.join(root.path, 'app'))!;
+    expect(widget.expression, 'const ShopApp()');
+    expect(widget.library, 'main.dart');
+    expect(widget.wrappers, ['ProviderScope', 'TranslationProvider']);
+    expect(
+      widget.riverpodImport,
+      "import 'package:flutter_riverpod/flutter_riverpod.dart';",
+    );
+
+    final source = entryPointSource(AppInfo.read(p.join(root.path, 'app')));
+    expect(source, contains("import 'package:shop/main.dart';"));
+    expect(
+      source,
+      contains("import 'package:flutter_riverpod/flutter_riverpod.dart';"),
+    );
+    expect(
+      source,
+      contains(
+        'appBuilder: (context, slot) => const ProviderScope(child: '
+        'ShopApp()),',
+      ),
+    );
+    expect(source, contains('ProviderScope > TranslationProvider'));
+  });
+
+  test('leaves a TODO for a root widget built with arguments', () {
+    _createApp();
+    _write('app/lib/main.dart', '''
+void main() {
+  runApp(ShopApp(config: loadConfig()));
+}
+''');
+    expect(findRootWidget(p.join(root.path, 'app')), isNull);
+  });
+
+  test('the entry point passes the devices to a controller', () {
+    _createApp();
+    final source = entryPointSource(AppInfo.read(p.join(root.path, 'app')));
+    expect(source, contains('MultiDevicePreviewController('));
+    expect(source, contains('controller: controller,'));
+  });
+
+  test('method B adds riverpod and follows the workspace lints', () async {
+    _createApp();
+    _write('pubspec.yaml', '''
+name: workspace
+environment:
+  sdk: ^3.13.0
+workspace:
+  - app
+''');
+    _write('analysis_options.yaml', 'include: package:lints/recommended.yaml');
+    _write(
+      'app/pubspec.yaml',
+      _read('app/pubspec.yaml')
+          .replaceFirst('environment:', 'resolution: workspace\nenvironment:')
+          .replaceFirst(
+            '    sdk: flutter\n',
+            '    sdk: flutter\n  flutter_riverpod: ^3.4.3\n',
+          ),
+    );
+    _write('app/lib/main.dart', """
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'src/shop_app.dart';
+
+void main() {
+  runApp(ProviderScope(child: const ShopApp()));
+}
+""");
+    final out = _Sink();
+    final code = await runInit(
+      ['--host', '../shop_preview'],
+      workingDirectory: p.join(root.path, 'app'),
+      out: out,
+      runProcess: (executable, arguments, {required workingDirectory}) async {
+        final code = await _fakeFlutter(
+          executable,
+          arguments,
+          workingDirectory: workingDirectory,
+        );
+        // What `flutter create` adds.
+        final target = p.join(workingDirectory, arguments.last);
+        File(p.join(target, 'analysis_options.yaml'))
+            .writeAsStringSync('include: package:flutter_lints/flutter.yaml');
+        File(p.join(target, 'pubspec.lock')).writeAsStringSync('{}');
+        final pubspec = File(p.join(target, 'pubspec.yaml'));
+        pubspec.writeAsStringSync(
+          '${pubspec.readAsStringSync()}'
+          'dev_dependencies:\n  flutter_lints: ^6.0.0\n',
+        );
+        return code;
+      },
+    );
+
+    expect(code, 0, reason: out.buffer.toString());
+    final pubspec = loadYaml(_read('shop_preview/pubspec.yaml')) as YamlMap;
+    expect(pubspec['dependencies']['flutter_riverpod'], '^3.4.3');
+    expect(pubspec['resolution'], 'workspace');
+    expect(pubspec['dev_dependencies'], isNull);
+    expect(
+      File(p.join(root.path, 'shop_preview/analysis_options.yaml'))
+          .existsSync(),
+      isFalse,
+    );
+    expect(
+      File(p.join(root.path, 'shop_preview/pubspec.lock')).existsSync(),
+      isFalse,
+    );
+    expect(
+      out.buffer.toString(),
+      contains('Add shop_preview to the workspace list'),
+    );
+  });
+
   test('explains what is wrong outside a Flutter app', () async {
     final out = _Sink();
     expect(await runInit([], workingDirectory: root.path, out: out), 1);

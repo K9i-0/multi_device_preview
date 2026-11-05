@@ -206,6 +206,16 @@ class AppInfo {
     return '^1.0.0';
   }
 
+  /// How the app depends on [package] in its `dependencies`, as a pubspec
+  /// value, or null. A path is rebased onto [fromDir] when given.
+  Object? dependency(String package) {
+    final deps = pubspec['dependencies'];
+    if (deps is! YamlMap || !deps.containsKey(package)) {
+      return null;
+    }
+    return _plain(deps[package]);
+  }
+
   /// The `flutter` section of the pubspec.
   YamlMap? get flutterSection {
     final section = pubspec['flutter'];
@@ -216,29 +226,82 @@ class AppInfo {
 /// The widget an app passes to `runApp`, and the library declaring it.
 class RootWidget {
   /// Describes a root widget.
-  const RootWidget(this.expression, this.library);
+  const RootWidget(
+    this.expression,
+    this.library, {
+    this.wrappers = const [],
+    this.riverpodImport,
+  });
 
-  /// The expression passed to `runApp`, for example `const MyApp()`.
+  /// The innermost widget passed to `runApp`, for example `const MyApp()`.
   final String expression;
 
   /// The library path inside `lib/` that declares the widget class.
   final String library;
+
+  /// The widgets `main()` wraps [expression] in, outermost first, for
+  /// example `ProviderScope` and slang's `TranslationProvider`.
+  final List<String> wrappers;
+
+  /// The directive importing Riverpod in `lib/main.dart`, when [wrappers]
+  /// has a `ProviderScope`.
+  final String? riverpodImport;
+
+  /// The package [riverpodImport] imports.
+  String? get riverpodPackage => riverpodImport == null
+      ? null
+      : RegExp('package:(\\w+)/').firstMatch(riverpodImport!)?.group(1);
 }
 
 /// Finds `runApp(<expression>)` in `lib/main.dart` and the library declaring
 /// the widget class it creates.
+///
+/// Wrappers that take the app as `child:` (for example
+/// `ProviderScope(overrides: ..., child: MyApp())`) are looked through. The
+/// innermost widget must be created without arguments, since anything it is
+/// given comes from `main()`.
 RootWidget? findRootWidget(String appDir) {
   final main = File(p.join(appDir, 'lib', 'main.dart'));
   if (!main.existsSync()) {
     return null;
   }
-  final match = RegExp(
-    r'runApp\(\s*((?:const\s+)?([A-Z]\w*)\s*\(\s*\))\s*,?\s*\)',
-  ).firstMatch(main.readAsStringSync());
-  if (match == null) {
+  final source = main.readAsStringSync();
+  final call = RegExp(r'\brunApp\(').firstMatch(source);
+  if (call == null) {
     return null;
   }
-  final className = match.group(2)!;
+  var expression = _balanced(source, call.end - 1);
+  if (expression == null) {
+    return null;
+  }
+  final wrappers = <String>[];
+  RegExpMatch? leaf;
+  final creation = RegExp(r'^(const\s+)?([A-Z]\w*)\s*(?:<[^>()]*>)?\s*\(');
+  while (true) {
+    expression = expression!.trim();
+    if (expression.endsWith(',')) {
+      expression = expression.substring(0, expression.length - 1).trim();
+    }
+    final match = creation.firstMatch(expression);
+    if (match == null) {
+      return null;
+    }
+    final arguments = _balanced(expression, match.end - 1);
+    if (arguments == null) {
+      return null;
+    }
+    if (arguments.trim().isEmpty || arguments.trim() == ',') {
+      leaf = match;
+      break;
+    }
+    final child = _namedArgument(arguments, 'child');
+    if (child == null) {
+      return null;
+    }
+    wrappers.add(match[2]!);
+    expression = child;
+  }
+  final className = leaf[2]!;
   final declaration = RegExp('class\\s+$className\\b');
   final lib = Directory(p.join(appDir, 'lib'));
   final candidates =
@@ -251,9 +314,73 @@ RootWidget? findRootWidget(String appDir) {
   for (final file in candidates) {
     if (declaration.hasMatch(file.readAsStringSync())) {
       return RootWidget(
-        match.group(1)!,
+        '${leaf[1] == null ? '' : 'const '}$className()',
         p.posix.joinAll(p.split(p.relative(file.path, from: lib.path))),
+        wrappers: wrappers,
+        riverpodImport: wrappers.contains('ProviderScope')
+            ? RegExp(
+                r"import\s+'package:(?:flutter_riverpod|hooks_riverpod|riverpod)"
+                r"/[^']+'\s*;",
+              ).firstMatch(source)?.group(0)
+            : null,
       );
+    }
+  }
+  return null;
+}
+
+/// The text between the parenthesis at [open] in [source] and the one
+/// closing it, or null when it is not closed.
+String? _balanced(String source, int open) {
+  var depth = 0;
+  String? quote;
+  for (var i = open; i < source.length; i++) {
+    final char = source[i];
+    if (quote != null) {
+      if (char == r'\') {
+        i++;
+      } else if (source.startsWith(quote, i)) {
+        i += quote.length - 1;
+        quote = null;
+      }
+      continue;
+    }
+    if (char == "'" || char == '"') {
+      quote = source.startsWith(char * 3, i) ? char * 3 : char;
+      i += quote.length - 1;
+    } else if (char == '(' || char == '[' || char == '{') {
+      depth++;
+    } else if (char == ')' || char == ']' || char == '}') {
+      depth--;
+      if (depth == 0) {
+        return source.substring(open + 1, i);
+      }
+    }
+  }
+  return null;
+}
+
+/// The value of the top-level named argument [name] in [arguments].
+String? _namedArgument(String arguments, String name) {
+  var depth = 0;
+  var start = 0;
+  final parts = <String>[];
+  for (var i = 0; i < arguments.length; i++) {
+    final char = arguments[i];
+    if (char == '(' || char == '[' || char == '{') {
+      depth++;
+    } else if (char == ')' || char == ']' || char == '}') {
+      depth--;
+    } else if (char == ',' && depth == 0) {
+      parts.add(arguments.substring(start, i));
+      start = i + 1;
+    }
+  }
+  parts.add(arguments.substring(start));
+  for (final part in parts) {
+    final match = RegExp('^\\s*$name\\s*:').firstMatch(part);
+    if (match != null) {
+      return part.substring(match.end);
     }
   }
   return null;
@@ -262,14 +389,60 @@ RootWidget? findRootWidget(String appDir) {
 /// The Dart source of a preview entry point for [app].
 String entryPointSource(AppInfo app) {
   final root = app.rootWidget;
-  final import = root == null
-      ? "// TODO: import your app's root widget.\n"
-            "// import 'package:${app.name}/app.dart';"
-      : "import 'package:${app.name}/${root.library}';";
-  final builder = root == null
-      ? "// TODO: build your app's root widget, as in main().\n"
-            '    appBuilder: (context, slot) => throw UnimplementedError(),'
-      : 'appBuilder: (context, slot) => ${root.expression},';
+  final imports = <String>[
+    "import 'package:multi_device_preview/multi_device_preview.dart';",
+  ];
+  final notes = StringBuffer();
+  String builder;
+  if (root == null) {
+    imports.add(
+      "// TODO: import your app's root widget.\n"
+      "// import 'package:${app.name}/app.dart';",
+    );
+    builder =
+        "// TODO: build your app's root widget, as in main().\n"
+        '    appBuilder: (context, slot) => throw UnimplementedError(),';
+  } else {
+    imports.add("import 'package:${app.name}/${root.library}';");
+    var widget = root.expression;
+    final others = [...root.wrappers];
+    if (root.riverpodImport case final riverpod?) {
+      imports.add(riverpod);
+      others.remove('ProviderScope');
+      widget = widget.startsWith('const ')
+          ? 'const ProviderScope(child: ${widget.substring(6)})'
+          : 'ProviderScope(child: $widget)';
+    }
+    if (root.wrappers.isNotEmpty) {
+      notes
+        ..writeln('//')
+        ..writeln(
+          '// main() wraps the app in ${root.wrappers.join(' > ')}. Pass '
+          'them what',
+        )
+        ..writeln(
+          '// main() passes them (for example the overrides of '
+          'ProviderScope).',
+        );
+      if (others.isNotEmpty) {
+        notes
+          ..writeln(
+            '// TODO: add ${others.join(', ')}: in appBuilder when each '
+            'device needs its',
+          )
+          ..writeln(
+            "// own, or once in runMultiDevicePreview's wrapper when it "
+            'must exist only',
+          )
+          ..writeln(
+            "// once (like slang's TranslationProvider, which holds a "
+            'global key).',
+          );
+      }
+    }
+    builder = 'appBuilder: (context, slot) => $widget,';
+  }
+  imports.sort((a, b) => a.startsWith('//') ? 1 : a.compareTo(b));
   return '''
 // Runs the app on several devices side by side, with input mirrored from the
 // first device to the others:
@@ -279,17 +452,21 @@ String entryPointSource(AppInfo app) {
 // Initialize what main() initializes (shared by every device) before
 // runMultiDevicePreview. appBuilder is called once per device, so each device
 // gets its own state (for example its own ProviderScope).
-import 'package:multi_device_preview/multi_device_preview.dart';
-$import
+$notes${imports.join('\n')}
 
 void main() {
-  runMultiDevicePreview(
+  // The controller also changes devices and takes screenshots from code, and
+  // is what multi_device_preview_marionette needs.
+  final controller = MultiDevicePreviewController(
     devices: const [
       PreviewDevice(preset: DevicePresets.iPhone17),
       PreviewDevice(preset: DevicePresets.iPhoneSe3),
       PreviewDevice(preset: DevicePresets.iPhoneSe3, textScale: 1.5),
       PreviewDevice(preset: DevicePresets.pixel9),
     ],
+  );
+  runMultiDevicePreview(
+    controller: controller,
     $builder
   );
 }
@@ -319,6 +496,12 @@ Future<void> initEntryPoint(
     out.writeln(
       'Could not find the widget passed to runApp in lib/main.dart; fill in '
       'the TODOs in $entry.',
+    );
+  }
+  if (app.rootWidget?.wrappers.isNotEmpty ?? false) {
+    out.writeln(
+      'main() wraps the app in ${app.rootWidget!.wrappers.join(' > ')}; '
+      'complete $entry.',
     );
   }
   _patchEntitlements(app.dir, out);
@@ -377,8 +560,32 @@ Future<void> initHostApp(
     'dependencies',
     'multi_device_preview',
   ], app.previewDependency(hostDir));
+  if (app.rootWidget?.riverpodPackage case final riverpod?) {
+    if (app.dependency(riverpod) case final spec?) {
+      editor.update(['dependencies', riverpod], spec);
+    }
+  }
+  final workspaceRoot = app.inWorkspace ? _workspaceRoot(app.dir) : null;
   if (app.inWorkspace) {
     editor.update(['resolution'], 'workspace');
+  }
+  // In a workspace, the host follows the workspace's lints instead of the
+  // flutter_lints that `flutter create` sets up.
+  final workspaceLints =
+      workspaceRoot != null &&
+      File(p.join(workspaceRoot, 'analysis_options.yaml')).existsSync();
+  if (workspaceLints) {
+    final devDependencies = editor.parseAt([
+      'dev_dependencies',
+    ], orElse: () => wrapAsYamlNode(null));
+    if (devDependencies is YamlMap &&
+        devDependencies.containsKey('flutter_lints')) {
+      if (devDependencies.length == 1) {
+        editor.remove(['dev_dependencies']);
+      } else {
+        editor.remove(['dev_dependencies', 'flutter_lints']);
+      }
+    }
   }
   final flutter = app.flutterSection;
   final linked = <String>{};
@@ -396,6 +603,25 @@ Future<void> initHostApp(
   }
   hostPubspec.writeAsStringSync(editor.toString());
   out.writeln('Updated ${p.relative(hostPubspec.path, from: app.dir)}.');
+  if (workspaceLints) {
+    final options = File(p.join(hostDir, 'analysis_options.yaml'));
+    if (options.existsSync() &&
+        options.readAsStringSync().contains('package:flutter_lints/')) {
+      options.deleteSync();
+      out.writeln(
+        "Removed the host's analysis_options.yaml to use the "
+        "workspace's.",
+      );
+    }
+  }
+  if (app.inWorkspace) {
+    // A workspace member resolves in the workspace root; pub would delete
+    // this lock file anyway.
+    final lock = File(p.join(hostDir, 'pubspec.lock'));
+    if (lock.existsSync()) {
+      lock.deleteSync();
+    }
+  }
 
   // Assets of a dependency resolve under packages/<name>/, while the app
   // loads them without a package. Linking the directories into the host
@@ -426,10 +652,21 @@ Future<void> initHostApp(
   out.writeln('Wrote ${p.relative(main.path, from: app.dir)}.');
   _patchEntitlements(hostDir, out);
 
-  out.writeln();
+  if (app.rootWidget?.wrappers.isNotEmpty ?? false) {
+    out.writeln(
+      'main() wraps the app in ${app.rootWidget!.wrappers.join(' > ')}; '
+      'complete lib/main.dart of the host app.',
+    );
+  }
+  out
+    ..writeln(
+      'Add the packages lib/main.dart imports to the dependencies of '
+      '${p.relative(hostPubspec.path, from: app.dir)}.',
+    )
+    ..writeln();
   if (app.inWorkspace) {
     out.writeln(
-      'Add ${p.relative(hostDir, from: _workspaceRoot(app.dir) ?? app.dir)} '
+      'Add ${p.relative(hostDir, from: workspaceRoot ?? app.dir)} '
       'to the workspace list of your root pubspec.yaml, then:',
     );
   } else {
