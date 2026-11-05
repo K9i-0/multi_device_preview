@@ -27,9 +27,8 @@ void main() {
       controller: controller,
       // A keyboard shortcut above the app's Navigator, like a debug menu
       // opened with Shift+D.
-      appBuilder: (context, slot) => _ShortcutApp(
-        onShortcut: () => shortcutPresses[slot.index]++,
-      ),
+      appBuilder: (context, slot) =>
+          _ShortcutApp(onShortcut: () => shortcutPresses[slot.index]++),
     );
     await tester.pump();
   }

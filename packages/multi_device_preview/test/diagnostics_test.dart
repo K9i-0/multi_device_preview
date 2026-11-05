@@ -38,6 +38,23 @@ void main() {
     expect(hints.single, contains(requirementsUrl));
   });
 
+  test('explains a ProviderScope moved to another device', () {
+    final hints = <String>[];
+    final handler = withSharedGlobalKeyHint((_) {}, printHint: hints.add);
+    final details = FlutterErrorDetails(
+      exception: UnsupportedError(
+        'ProviderScope was rebuilt with a different ProviderScope ancestor',
+      ),
+    );
+
+    handler(details);
+    handler(details);
+
+    expect(hints, hasLength(1));
+    expect(hints.single, contains('A ProviderScope moved to another device'));
+    expect(hints.single, contains('navigatorKey'));
+  });
+
   test('leaves other errors alone', () {
     final hints = <String>[];
     final forwarded = <FlutterErrorDetails>[];
@@ -68,10 +85,8 @@ void main() {
       await pumpPreview(
         tester,
         controller: controller,
-        appBuilder: (context, slot) => MaterialApp(
-          navigatorKey: _sharedKey,
-          home: const SizedBox(),
-        ),
+        appBuilder: (context, slot) =>
+            MaterialApp(navigatorKey: _sharedKey, home: const SizedBox()),
       );
     } finally {
       FlutterError.onError = original;
