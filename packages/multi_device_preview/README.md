@@ -42,7 +42,7 @@ it up; the API is the same.
 |---|---|---|
 | Suits | single-package repositories | monorepos / pub workspaces |
 | macOS build | your app's plugins build for macOS | some plugins don't, and you want to override or patch them without touching the app |
-| Changes to your app | adds `macos/` and a dev dependency | none |
+| Changes to your app | adds `macos/` and a dev dependency | only the dev dependency that runs `init` |
 | Assets and fonts | work as is | re-declared and linked by `init` |
 
 ### A. Entry point in your app
@@ -228,9 +228,19 @@ runMultiDevicePreview(
 
 All devices run in **one process**, so:
 
-- **No global `GlobalKey`s or singletons holding widget state.** If you have
-  one (slang's `TranslationProvider` uses a global key), place it once above
-  all devices with `wrapper`.
+- **No global `GlobalKey`s or singletons holding widget state.** A key in a
+  global variable or a static field is shared by every device, and Flutter
+  reports `Multiple widgets used the same GlobalKey` on every frame (the
+  preview prints which key it is and what to do). Common cases:
+  - A go_router `navigatorKey` declared at the top level, as in go_router's
+    examples, and the `$parentNavigatorKey` of typed routes that point to it.
+    Create the key where the router is created (for example in the provider
+    that builds the `GoRouter`), or leave it out: `GoRouter` makes its own,
+    and top-level routes already open on the root navigator.
+  - A static `scaffoldMessengerKey` for showing snack bars from anywhere.
+    Hold it per app instance (for example in a provider).
+  - Something that must exist only once, like slang's `TranslationProvider`
+    (it holds a global key): place it above all devices with `wrapper`.
 - **Persisted state is shared**: SharedPreferences, the Keychain and files are
   the same for every device (being signed in, settings).
 - **Plugins without a macOS implementation** throw `MissingPluginException`.
