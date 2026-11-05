@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 
 import 'commands.dart';
 import 'controller.dart';
+import 'diagnostics.dart';
 import 'multi_device_preview.dart';
 import 'preview_device.dart';
 import 'sync/anchor.dart';
@@ -34,6 +35,10 @@ import 'sync/input_gate.dart';
 ///
 /// When a binding was initialized before (for example `MarionetteBinding`),
 /// it is kept.
+///
+/// Outside release mode, the first error about a GlobalKey used by more than
+/// one widget is followed by an explanation: a key held in a global variable
+/// or a static field is shared by every device.
 void runMultiDevicePreview({
   required MultiDeviceAppBuilder appBuilder,
   List<PreviewDevice> devices = defaultPreviewDevices,
@@ -55,6 +60,9 @@ void runMultiDevicePreview({
     debugDefaultTargetPlatformOverride = targetPlatform;
   }
   PlatformInput.mouseAsTouch = mouseAsTouch;
+  if (!kReleaseMode) {
+    FlutterError.onError = withSharedGlobalKeyHint(FlutterError.onError);
+  }
   final effectiveController =
       controller ?? MultiDevicePreviewController(devices: devices);
   if (registerServiceExtensions) {
