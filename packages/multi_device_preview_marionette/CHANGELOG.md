@@ -1,3 +1,8 @@
+## 1.1.1
+
+- README: the setup passes the devices to the controller and initializes
+  Marionette before any other binding.
+
 ## 1.1.0
 
 - Requires multi_device_preview 1.2.0. The `setDevice` and `addDevice` tools

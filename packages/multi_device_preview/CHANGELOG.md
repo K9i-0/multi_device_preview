@@ -1,3 +1,29 @@
+## 1.3.0
+
+- Keyboard focus stays on the first device while input is mirrored. Every
+  app focuses its first route when it starts, so the device that started
+  last held the focus and keyboard shortcuts above the app's `Navigator`
+  (for example a debug menu on Shift+D) only worked there; focus dropped
+  after a mirrored tap reached no device at all.
+- Outside release mode, `runMultiDevicePreview` explains the first
+  `Multiple widgets used the same GlobalKey` error for each key, and
+  Riverpod's `ProviderScope was rebuilt with a different ProviderScope
+  ancestor`: a GlobalKey in a global variable or a static field (a go_router
+  `navigatorKey`, a `scaffoldMessengerKey`) is shared by every device. The
+  README lists these cases.
+- `init` looks through the widgets wrapping the app as `child:` in
+  `runApp`, for example `ProviderScope(overrides: ..., child:
+  TranslationProvider(child: MyApp()))`: it builds a `ProviderScope` in
+  `appBuilder` (and adds Riverpod to a host app) and lists the other
+  wrappers in a comment, instead of leaving only TODOs.
+- The entry point written by `init` passes the devices to a
+  `MultiDevicePreviewController`, so multi_device_preview_marionette can be
+  added to it as is.
+- `init --host` in a pub workspace: the host app uses the workspace's
+  `analysis_options.yaml` instead of flutter_lints, and the `pubspec.lock`
+  left by `flutter create` is removed. `init` reminds you to add the
+  packages the entry point imports to the host app.
+
 ## 1.2.0
 
 - `PreviewDevice.orientation`: a device can be held in landscape. The screen
