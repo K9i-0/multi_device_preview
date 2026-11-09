@@ -44,6 +44,18 @@ void main() {
     );
   });
 
+  test('the closed iPhone Duo camera hole sits in the right strip', () {
+    // Measured with `simctl io --display=1 --mask=black` on iOS 27.2.
+    final screen = parseSvgPathData(
+      MultiDevicePresets.iPhoneDuo.frame!.screenPath,
+    );
+    expect(screen.contains(const Offset(418, 47.67)), isFalse);
+    // The app area along the top edge is not cut.
+    expect(screen.contains(const Offset(233, 30)), isTrue);
+    expect(screen.contains(const Offset(380, 47.67)), isTrue);
+    expect(screen.contains(const Offset(418, 80)), isTrue);
+  });
+
   testWidgets('the status bar time replaces the preset artwork', (
     tester,
   ) async {
