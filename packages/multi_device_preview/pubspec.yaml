@@ -2,7 +2,7 @@ name: multi_device_preview
 description: >-
   Run a Flutter app on multiple device sizes and text scales side by side in a
   single macOS window, and mirror input from one device to the others.
-version: 1.3.0
+version: 1.3.1
 repository: https://github.com/K9i-0/multi_device_preview
 issue_tracker: https://github.com/K9i-0/multi_device_preview/issues
 topics:

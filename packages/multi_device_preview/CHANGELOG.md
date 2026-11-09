@@ -1,3 +1,10 @@
+## 1.3.1
+
+- The closed iPhone Duo (`MultiDevicePresets.iPhoneDuo`) cuts its camera as
+  a 37 pt circle at the top of the right control strip, above the time, as
+  the iOS 27.2 simulator does. It was a pill at the top center, which hid
+  app content that the device shows.
+
 ## 1.3.0
 
 - Keyboard focus stays on the first device while input is mirrored. Every
