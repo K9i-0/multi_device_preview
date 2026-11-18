@@ -87,14 +87,15 @@ git log --oneline "$base"..HEAD -- $dir
 
 ## 5. ローカル検証
 
-publish.yml と同じ検証を行う。macOS Patrol の全ケース成功を必須にし、失敗・skip・起動だけの成功を合格としない。両パッケージのリリースに同じ回帰スイートを使う。すべて通らなければタグを打たない。
+ローカルでは `check` と `publish-check` を通す。すべて通らなければタグを打たない。
 
 ```bash
 mise run setup
 mise run check
 mise run publish-check
-mise run e2e
 ```
+
+macOS Patrol E2E はローカルでは実行しない。タグ push 後の publish.yml が実行し、全ケース成功後にだけ publish する（失敗・skip・起動だけの成功は合格としない）。両パッケージのリリースに同じ回帰スイートを使う。
 
 `publish-check` の警告（`Package has 0 warnings` 以外）は内容を確認し、今回の変更に起因するものは直す。
 
