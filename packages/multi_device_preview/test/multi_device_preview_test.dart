@@ -101,4 +101,68 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets('a hot reload does not call appBuilder again', (tester) async {
+    final calls = <int, int>{};
+    tester.view.physicalSize = const Size(2400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final controller = MultiDevicePreviewController(devices: _devices);
+    await tester.pumpWidget(
+      MultiDevicePreview(
+        controller: controller,
+        appBuilder: (context, slot) {
+          calls.update(slot.index, (count) => count + 1, ifAbsent: () => 1);
+          return _ProbeApp(slot);
+        },
+      ),
+    );
+    expect(calls, {0: 1, 1: 1});
+
+    // What a hot reload does to the widget tree.
+    tester.binding.buildOwner!.reassemble(tester.binding.rootElement!);
+    await tester.pump();
+    expect(calls, {0: 1, 1: 1});
+
+    // Changing a device keeps the app, and so what appBuilder created.
+    controller.setDevice(
+      0,
+      const PreviewDevice(preset: DevicePresets.iPhone17, textScale: 2),
+    );
+    await tester.pump();
+    expect(calls, {0: 1, 1: 1});
+
+    controller.restart();
+    await tester.pump();
+    expect(calls, {0: 2, 1: 2});
+  });
+
+  testWidgets('appBuilder runs again when what it read from context changes', (
+    tester,
+  ) async {
+    final scales = <double>[];
+    tester.view.physicalSize = const Size(2400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final controller = MultiDevicePreviewController(
+      devices: const [PreviewDevice(preset: DevicePresets.iPhoneSe3)],
+    );
+    await tester.pumpWidget(
+      MultiDevicePreview(
+        controller: controller,
+        appBuilder: (context, slot) {
+          scales.add(MediaQuery.textScalerOf(context).scale(1));
+          return _ProbeApp(slot);
+        },
+      ),
+    );
+    expect(scales, [1]);
+
+    controller.setDevice(
+      0,
+      const PreviewDevice(preset: DevicePresets.iPhoneSe3, textScale: 2),
+    );
+    await tester.pump();
+    expect(scales, [1, 2]);
+  });
 }

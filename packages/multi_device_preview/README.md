@@ -86,8 +86,8 @@ void main() {
       PreviewDevice(preset: DevicePresets.iPhoneSe3, textScale: 1.5),
       PreviewDevice(preset: DevicePresets.pixel9),
     ],
-    // Called once per device (and on restart): each device gets its own
-    // state, for example its own ProviderScope.
+    // Called once per device (and on restart, but not on hot reload): each
+    // device gets its own state, for example its own ProviderScope.
     appBuilder: (context, slot) => const ProviderScope(child: MyApp()),
   );
 }
@@ -273,6 +273,9 @@ All devices run in **one process**, so:
   devices, so they open inside the device.
 - **When `main()` gains new overrides** (for example Riverpod overrides), add
   them to `appBuilder` as well.
+- **A hot reload does not call `appBuilder` again**, so what it creates for a
+  device (overrides, controllers) is kept, like what `main()` creates. After
+  editing `appBuilder` itself, restart the apps from the toolbar.
 - Run it in **debug mode**. Profile mode cannot render as iOS and has no hot
   reload.
 

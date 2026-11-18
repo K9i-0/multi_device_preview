@@ -26,6 +26,13 @@ import 'sync/text_sync.dart';
 ///
 /// It is called once per device (and again after a restart), so each device
 /// gets its own widget tree and state, for example its own `ProviderScope`.
+/// What it creates for the device (overrides, controllers) lives as long as
+/// the app on that device.
+///
+/// A hot reload does not call it again: restart the apps (the toolbar, or
+/// [MultiDevicePreviewController.restart]) to apply an edit to the builder
+/// itself. It is called again when an inherited widget it read from
+/// `context` changes.
 typedef MultiDeviceAppBuilder = Widget Function(
   BuildContext context,
   DeviceSlot slot,
@@ -527,6 +534,37 @@ class _MultiDevicePreviewState extends State<MultiDevicePreview>
   }
 }
 
+/// Calls [appBuilder] once and keeps the widget it returned.
+///
+/// A hot reload rebuilds every element. Calling [appBuilder] again then would
+/// replace what it creates for the device (overrides, controllers), and with
+/// it the state of the app that depends on them.
+class _PreviewedApp extends StatefulWidget {
+  const _PreviewedApp({required this.appBuilder, required this.slot});
+
+  final MultiDeviceAppBuilder appBuilder;
+  final DeviceSlot slot;
+
+  @override
+  State<_PreviewedApp> createState() => _PreviewedAppState();
+}
+
+class _PreviewedAppState extends State<_PreviewedApp> {
+  Widget? _app;
+
+  // Also called when an inherited widget that appBuilder read from its
+  // context changes (for example MediaQuery), so the app follows it.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _app = null;
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _app ??= widget.appBuilder(context, widget.slot);
+}
+
 class _DeviceScreen extends StatefulWidget {
   const _DeviceScreen({
     super.key,
@@ -642,9 +680,7 @@ class _DeviceScreenState extends State<_DeviceScreen> {
         // A global key, so the app keeps its state when the device moves to
         // another index (and the screen key above it changes).
         key: GlobalKey(debugLabel: 'multi_device_preview.app'),
-        child: Builder(
-          builder: (context) => widget.appBuilder(context, widget.slot),
-        ),
+        child: _PreviewedApp(appBuilder: widget.appBuilder, slot: widget.slot),
       );
     }
     final device = widget.slot.device;
