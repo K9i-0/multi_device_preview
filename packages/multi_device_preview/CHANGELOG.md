@@ -4,9 +4,8 @@
   called once per device, but every hot reload ran it again, replacing what
   it creates for the device: with Riverpod overrides created there, the
   providers watching them were rebuilt and the app went back to its first
-  route. After editing `appBuilder` itself, restart the apps from the
-  toolbar. It still runs again when an inherited widget it read from
-  `context` changes.
+  route. After editing `appBuilder` itself, hot restart (`R`). It still runs
+  again when an inherited widget it read from `context` changes.
 
 ## 1.3.1
 

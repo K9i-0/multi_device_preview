@@ -275,7 +275,8 @@ All devices run in **one process**, so:
   them to `appBuilder` as well.
 - **A hot reload does not call `appBuilder` again**, so what it creates for a
   device (overrides, controllers) is kept, like what `main()` creates. After
-  editing `appBuilder` itself, restart the apps from the toolbar.
+  editing `appBuilder` itself, hot restart (`R`): restarting the apps from
+  the toolbar calls the builder as it was when the app started.
 - Run it in **debug mode**. Profile mode cannot render as iOS and has no hot
   reload.
 

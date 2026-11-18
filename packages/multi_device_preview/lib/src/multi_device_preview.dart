@@ -29,10 +29,10 @@ import 'sync/text_sync.dart';
 /// What it creates for the device (overrides, controllers) lives as long as
 /// the app on that device.
 ///
-/// A hot reload does not call it again: restart the apps (the toolbar, or
-/// [MultiDevicePreviewController.restart]) to apply an edit to the builder
-/// itself. It is called again when an inherited widget it read from
-/// `context` changes.
+/// A hot reload does not call it again, and a restart from the toolbar or
+/// [MultiDevicePreviewController.restart] calls the builder as it was when
+/// the app started: hot restart to apply an edit to the builder itself. It is
+/// called again when an inherited widget it read from `context` changes.
 typedef MultiDeviceAppBuilder = Widget Function(
   BuildContext context,
   DeviceSlot slot,
