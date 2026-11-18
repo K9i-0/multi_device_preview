@@ -1,3 +1,11 @@
+## 1.3.3
+
+- Corrects what 1.3.2 said about editing `appBuilder` itself: restarting the
+  apps from the toolbar does not apply the edit, because it calls the
+  builder as it was when the app started. Hot restart (`R`) instead. The
+  README, the API documentation and the 1.3.2 entry below are fixed; the
+  behavior is unchanged.
+
 ## 1.3.2
 
 - A hot reload no longer calls `appBuilder` again. It was documented as
