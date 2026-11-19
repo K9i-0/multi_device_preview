@@ -1,4 +1,4 @@
-## Unreleased
+## 1.3.4
 
 - Compiles on Flutter 3.50. `device_preview` 3.0.0 implements
   `PlatformDispatcher` in its binding, which lacks the
