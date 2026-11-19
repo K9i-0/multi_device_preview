@@ -1,4 +1,4 @@
-import 'package:device_preview/device_preview.dart';
+import 'package:multi_device_preview/src/device_preview_models.dart';
 import 'package:device_preview/svg.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,5 +1,5 @@
 [tools]
-flutter = "3.47.8"
+flutter = "3.50.0"
 
 [tasks.setup]
 description = "Resolve workspace dependencies"

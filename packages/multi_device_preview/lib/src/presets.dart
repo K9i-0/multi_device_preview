@@ -5,7 +5,7 @@
 
 import 'dart:ui' as ui;
 
-import 'package:device_preview/device_preview.dart';
+import 'device_preview_models.dart';
 import 'package:device_preview/presets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';

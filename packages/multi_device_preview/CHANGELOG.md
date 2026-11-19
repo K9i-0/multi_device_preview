@@ -1,3 +1,13 @@
+## Unreleased
+
+- Compiles on Flutter 3.50. `device_preview` 3.0.0 implements
+  `PlatformDispatcher` in its binding, which lacks the
+  `resetInternalState` member Flutter 3.50 added, so every app importing
+  this package failed to build there. This package never used that binding
+  and no longer loads it. An app that imports
+  `package:device_preview/device_preview.dart` itself still needs the
+  upstream fix. Flutter 3.47 keeps working.
+
 ## 1.3.3
 
 - Corrects what 1.3.2 said about editing `appBuilder` itself: restarting the

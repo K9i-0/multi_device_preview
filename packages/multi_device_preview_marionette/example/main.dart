@@ -5,6 +5,9 @@
 // See packages/multi_device_preview/example/marionette/main.dart in the
 // repository for a complete app.
 import 'package:flutter/foundation.dart';
+// Moving to material_ui changes the widget types apps share with this
+// package, so it is left for a dedicated release.
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:multi_device_preview/multi_device_preview.dart';

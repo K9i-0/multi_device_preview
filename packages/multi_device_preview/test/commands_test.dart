@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:device_preview/device_preview.dart';
+import 'package:multi_device_preview/src/device_preview_models.dart';
+// Moving to material_ui changes the widget types apps share with this
+// package, so it is left for a dedicated release.
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:multi_device_preview/multi_device_preview.dart';

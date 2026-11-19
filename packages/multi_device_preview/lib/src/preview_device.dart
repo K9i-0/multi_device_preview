@@ -1,4 +1,5 @@
-import 'package:device_preview/device_preview.dart';
+import 'device_preview_models.dart';
+
 import 'package:device_preview/presets.dart';
 import 'package:flutter/widgets.dart';
 

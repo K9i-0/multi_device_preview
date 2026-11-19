@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:device_preview/device_preview.dart';
+import 'device_preview_models.dart';
+
 import 'package:device_preview/svg.dart';
 import 'package:flutter/foundation.dart';
+// Moving to material_ui changes the widget types apps share with this
+// package, so it is left for a dedicated release.
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
